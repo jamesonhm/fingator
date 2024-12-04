@@ -12,30 +12,17 @@ import (
 )
 
 func run(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) error {
+	dburl := getenv("DB_URL")
+	serveport := ("PORT")
+	fmt.Fprintf(stdout, "env variables - dburl: %s, serveport: %s\n", dburl, serveport)
 	return nil
 }
 
 func main() {
 	ctx := context.Background()
-	if err := run(ctx, getenv, os.Stdout, os.Stderr); err != nil {
+	godotenv.Load()
+	if err := run(ctx, os.Getenv, os.Stdout, os.Stderr); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
-	}
-}
-
-func getenv(key string) string {
-
-	godotenv.Load()
-	switch key {
-	case "DB_URL":
-		return os.Getenv("DB_URL")
-	case "PORT":
-		return os.Getenv("PORT")
-	default:
-		return ""
-		//db, err := sql.Open("postgres", dbURL)
-		//if err != nil {
-		//	log.Fatal(err)
-		//}
 	}
 }
