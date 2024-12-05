@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-playground/form/v4"
+	"github.com/jamesonhm/fingator/internal/uri"
 )
 
 const (
@@ -16,11 +16,10 @@ const (
 )
 
 type Client struct {
-	baseurl      string
-	apiKey       string
-	httpC        http.Client
-	pathEncoder  *form.Encoder
-	queryEncoder *form.Encoder
+	baseurl    string
+	apiKey     string
+	httpC      http.Client
+	uriBuilder *uri.URIBuilder
 }
 
 func New(apiKey string, timeout time.Duration) Client {
@@ -30,8 +29,7 @@ func New(apiKey string, timeout time.Duration) Client {
 		httpC: http.Client{
 			Timeout: timeout,
 		},
-		pathEncoder:  newEncoder("path"),
-		queryEncoder: newEncoder("query"),
+		uriBuilder: uri.New(APIURL),
 	}
 }
 
@@ -63,10 +61,10 @@ func (c *Client) encodeParams(path string, params any) (string, error) {
 	return path, nil
 }
 
-func newEncoder(tag string) *form.Encoder {
-	e := form.NewEncoder()
-	e.SetMode(form.ModeExplicit)
-	e.SetTagName(tag)
-
-	return e
-}
+//func newEncoder(tag string) *form.Encoder {
+//	e := form.NewEncoder()
+//	e.SetMode(form.ModeExplicit)
+//	e.SetTagName(tag)
+//
+//	return e
+//}
