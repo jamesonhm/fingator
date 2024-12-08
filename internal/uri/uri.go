@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
+
+	"github.com/jamesonhm/fingator/internal/polygon/models"
 )
 
 const (
@@ -20,15 +22,13 @@ type URIBuilder struct {
 
 func New(baseURL string) *URIBuilder {
 	return &URIBuilder{
-		baseURL:      strings.TrimRight(baseURL, "/"),
-		pathSegments: []string{},
-		queryParams:  url.Values{},
+		baseURL: strings.TrimRight(baseURL, "/"),
 	}
 }
 
 func (b *URIBuilder) EncodeParams(path string, params interface{}) string {
 	epath := encodePath(path, params)
-	return epath
+	return b.baseURL + epath
 }
 
 func encodePath(path string, params interface{}) string {
@@ -38,45 +38,26 @@ func encodePath(path string, params interface{}) string {
 		field := pt.Field(i)
 		tag := field.Tag.Get(pathTag)
 		if tag != "" {
-			//ft := pv.Field(i).Type().String()
-			fv := pv.Field(i).String()
+			ft := pv.Field(i).Type().String()
+			fmt.Printf("PATH ENCODER: field Type = %s\n", ft)
+			fv := pv.Field(i).Interface()
+			sfv, _ := formatFieldValue(ft, fv)
 			// insert tag and value (fv) to path
-			path = strings.ReplaceAll(path, fmt.Sprintf("{%s}", tag), url.PathEscape(fv))
+			path = strings.ReplaceAll(path, fmt.Sprintf("{%s}", tag), url.PathEscape(sfv))
 		}
 	}
 	return path
 }
 
-//func (b *URIBuilder) AddPathParam(segment string) *URIBuilder {
-//	b.pathSegments = append(b.pathSegments, url.PathEscape(segment))
-//	return b
-//}
-//
-//func (b *URIBuilder) AddQueryParam(key string, value any) *URIBuilder {
-//	var strVal string
-//	switch value.(type) {
-//	case string:
-//		strVal = value.(string)
-//	case int:
-//		strVal = fmt.Sprintf("%d", value)
-//	case fmt.Stringer:
-//		strVal = value.(fmt.Stringer).String()
-//	default:
-//		strVal = fmt.Sprintf("%v", value)
-//	}
-//
-//	if strVal != "" {
-//		b.queryParams.Add(key, strVal)
-//	}
-//	return b
-//}
-//
-//func (b *URIBuilder) Build() string {
-//	path := strings.Join(b.pathSegments, "/")
-//	fullURL := fmt.Sprintf("%s/%s", b.baseURL, path)
-//
-//	if len(b.queryParams) > 0 {
-//		fullURL += "?" + b.queryParams.Encode()
-//	}
-//	return fullURL
-//}
+func formatFieldValue(fieldType string, fieldValue interface{}) (string, error) {
+	var sfv string
+	switch fieldType {
+	case "float64":
+		sfv = fmt.Sprintf("%g", fieldValue)
+	case "models.Date":
+		sfv = fieldValue.(models.Date).Format()
+	default:
+		sfv = fmt.Sprintf("%v", fieldValue)
+	}
+	return sfv, nil
+}
