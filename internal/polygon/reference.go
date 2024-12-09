@@ -16,6 +16,9 @@ const (
 func (c *Client) ListTickers(ctx context.Context, params *models.ListTickersParams) error {
 	res := &models.ListTickersResponse{}
 	err := c.Call(ctx, ListTickersPath, params, res)
-	fmt.Printf("List Tickers Response: %v\n", res)
+	fmt.Printf("List Tickers Response: \n")
+	for _, r := range res.Results {
+		fmt.Printf("%v\n", r)
+	}
 	return err
 }

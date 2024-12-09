@@ -26,14 +26,15 @@ func New(baseURL string) *URIBuilder {
 	}
 }
 
-func (b *URIBuilder) EncodeParams(path string, params interface{}) string {
+func (b *URIBuilder) EncodeParams(path string, params any) string {
 	epath := encodePath(path, params)
 	return b.baseURL + epath
 }
 
 func encodePath(path string, params interface{}) string {
-	pt := reflect.TypeOf(params)
 	pv := reflect.ValueOf(params)
+	i := reflect.Indirect(pv)
+	pt := i.Type()
 	for i := 0; i < pt.NumField(); i++ {
 		field := pt.Field(i)
 		tag := field.Tag.Get(pathTag)
