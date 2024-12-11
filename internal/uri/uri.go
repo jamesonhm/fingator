@@ -15,9 +15,7 @@ const (
 )
 
 type URIBuilder struct {
-	baseURL      string
-	pathSegments []string
-	queryParams  url.Values
+	baseURL string
 }
 
 func New(baseURL string) *URIBuilder {
@@ -28,37 +26,70 @@ func New(baseURL string) *URIBuilder {
 
 func (b *URIBuilder) EncodeParams(path string, params any) string {
 	epath := encodePath(path, params)
-	return b.baseURL + epath
+	equeries := encodeQuery(params)
+	fullPath := b.baseURL + epath
+	if len(equeries) != 0 {
+		fullPath += "?" + equeries
+	}
+	return fullPath
 }
 
 func encodePath(path string, params interface{}) string {
-	pv := reflect.ValueOf(params)
-	i := reflect.Indirect(pv)
-	pt := i.Type()
-	for i := 0; i < pt.NumField(); i++ {
-		field := pt.Field(i)
-		tag := field.Tag.Get(pathTag)
-		if tag != "" {
-			ft := pv.Field(i).Type().String()
-			fmt.Printf("PATH ENCODER: field Type = %s\n", ft)
-			fv := pv.Field(i).Interface()
-			sfv, _ := formatFieldValue(ft, fv)
-			// insert tag and value (fv) to path
-			path = strings.ReplaceAll(path, fmt.Sprintf("{%s}", tag), url.PathEscape(sfv))
-		}
+	tagVals := iterateParams(params, pathTag)
+	for k, v := range tagVals {
+		path = strings.ReplaceAll(path, fmt.Sprintf("{%s}", k), url.PathEscape(v))
 	}
 	return path
 }
 
-func formatFieldValue(fieldType string, fieldValue interface{}) (string, error) {
-	var sfv string
-	switch fieldType {
-	case "float64":
-		sfv = fmt.Sprintf("%g", fieldValue)
-	case "models.Date":
-		sfv = fieldValue.(models.Date).Format()
-	default:
-		sfv = fmt.Sprintf("%v", fieldValue)
+func encodeQuery(params interface{}) string {
+	tagVals := iterateParams(params, queryTag)
+
+	queries := url.Values{}
+	for k, v := range tagVals {
+		queries.Add(k, v)
 	}
-	return sfv, nil
+	return queries.Encode()
+}
+
+func iterateParams(params interface{}, tagType string) map[string]string {
+	tagVals := make(map[string]string)
+
+	pv := reflect.ValueOf(params)
+	if pv.Kind() == reflect.Ptr {
+		pv = pv.Elem()
+	}
+	pt := pv.Type()
+	for i := 0; i < pv.NumField(); i++ {
+		field := pv.Field(i)
+		tagName := pt.Field(i).Tag.Get(tagType)
+		fv := formatFieldValue(field)
+		if tagName != "" && fv != "" {
+			tagVals[tagName] = fv
+		}
+	}
+	return tagVals
+}
+
+func formatFieldValue(field reflect.Value) string {
+	if field.Kind() == reflect.Ptr {
+		if field.IsNil() {
+			return ""
+		}
+		field = field.Elem()
+	}
+
+	switch typedValue := field.Interface().(type) {
+	case models.Date:
+		return typedValue.Format()
+	}
+
+	switch field.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16:
+		return fmt.Sprintf("%d", field.Int())
+	case reflect.Float32, reflect.Float64:
+		return fmt.Sprintf("%g", field.Float())
+	default:
+		return fmt.Sprintf("%v", field.Interface())
+	}
 }

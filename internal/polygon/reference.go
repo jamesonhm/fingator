@@ -18,7 +18,7 @@ func (c *Client) ListTickers(ctx context.Context, params *models.ListTickersPara
 	err := c.Call(ctx, ListTickersPath, params, res)
 	fmt.Printf("List Tickers Response: \n")
 	for _, r := range res.Results {
-		fmt.Printf("%v\n", r)
+		fmt.Printf("%+v\n", r)
 	}
 	return err
 }
