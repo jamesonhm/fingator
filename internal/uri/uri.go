@@ -15,23 +15,19 @@ const (
 )
 
 type URIBuilder struct {
-	baseURL string
 }
 
-func New(baseURL string) *URIBuilder {
-	return &URIBuilder{
-		baseURL: strings.TrimRight(baseURL, "/"),
-	}
+func New() *URIBuilder {
+	return &URIBuilder{}
 }
 
 func (b *URIBuilder) EncodeParams(path string, params any) string {
 	epath := encodePath(path, params)
 	equeries := encodeQuery(params)
-	fullPath := b.baseURL + epath
 	if len(equeries) != 0 {
-		fullPath += "?" + equeries
+		epath += "?" + equeries
 	}
-	return fullPath
+	return epath
 }
 
 func encodePath(path string, params interface{}) string {

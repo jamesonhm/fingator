@@ -46,7 +46,26 @@ func TestEncodePolyDate(t *testing.T) {
 		DateQ: &pdate,
 	}
 
-	expected := "/v1/2023-12-06"
+	expected := "/v1/2023-12-06?date=2023-12-06"
 	actual := uri.New("").EncodeParams(testPath, params)
+	assert.Equal(t, actual, expected)
+}
+
+func TestEncodePointer(t *testing.T) {
+	testPath := "/v2/{date}"
+
+	type Params struct {
+		Date models.Date `path:"date"`
+		StrQ *string     `query:"str"`
+	}
+
+	pdate := models.Date(time.Date(2023, 12, 6, 0, 0, 0, 0, time.UTC))
+	str := "teststr"
+	params := Params{
+		Date: pdate,
+		StrQ: &str,
+	}
+	expected := "/v2/2023-12-06?str=teststr"
+	actual := uri.New("").EncodeParams(testPath, &params)
 	assert.Equal(t, actual, expected)
 }

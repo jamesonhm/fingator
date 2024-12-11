@@ -28,7 +28,7 @@ func New(apiKey string, timeout time.Duration) Client {
 		httpC: http.Client{
 			Timeout: timeout,
 		},
-		uriBuilder: uri.New(APIURL),
+		uriBuilder: uri.New(),
 	}
 }
 
@@ -38,11 +38,12 @@ func (c *Client) Call(ctx context.Context, path string, params, response any) er
 	//if err != nil {
 	//	return err
 	//}
-	fmt.Printf("clietn-call-uri: %s\n", uri)
+	fmt.Printf("client-call-uri: %s\n", uri)
 	return c.CallURL(ctx, uri, response)
 }
 
 func (c *Client) CallURL(ctx context.Context, uri string, response any) error {
+	uri = APIURL + uri
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
 	if err != nil {
 		return err

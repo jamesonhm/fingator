@@ -13,3 +13,7 @@ type BaseResponse struct {
 type PaginationHooks struct {
 	NextURL string `json:"next_url,omitempty"`
 }
+
+func (p PaginationHooks) NextPage() string {
+	return p.NextURL
+}

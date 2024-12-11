@@ -16,9 +16,9 @@ import (
 )
 
 func run(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) error {
-	dburl := getenv("DB_URL")
-	serveport := getenv("PORT")
-	fmt.Fprintf(stdout, "env variables - dburl: %s, serveport: %s\n", dburl, serveport)
+	//dburl := getenv("DB_URL")
+	//serveport := getenv("PORT")
+	//fmt.Fprintf(stdout, "env variables - dburl: %s, serveport: %s\n", dburl, serveport)
 
 	polyClient := polygon.New(getenv("POLYGON_API_KEY"), time.Second*10)
 
@@ -26,7 +26,13 @@ func run(ctx context.Context, getenv func(string) string, stdout, stderr io.Writ
 	params := &models.ListTickersParams{
 		Type: &tType,
 	}
-	polyClient.ListTickers(ctx, params)
+	iter := polyClient.ListTickers(ctx, params)
+	for iter.Next() {
+		fmt.Fprintf(stdout, "%+v\n", iter.Item())
+	}
+	if iter.Err() != nil {
+		fmt.Fprintf(stdout, "%v\n", iter.Err())
+	}
 	return nil
 }
 
