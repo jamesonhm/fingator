@@ -31,7 +31,7 @@ func run(ctx context.Context, getenv func(string) string, stdout, stderr io.Writ
 		fmt.Fprintf(stdout, "%+v\n", iter.Item())
 	}
 	if iter.Err() != nil {
-		fmt.Fprintf(stdout, "%v\n", iter.Err())
+		fmt.Fprintf(stderr, "%v\n", iter.Err())
 	}
 	return nil
 }

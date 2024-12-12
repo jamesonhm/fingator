@@ -21,6 +21,8 @@ func (d Date) Format() string {
 	return time.Time(d).Format("2006-01-02")
 }
 
+type Millis time.Time
+
 type Order string
 
 const (
