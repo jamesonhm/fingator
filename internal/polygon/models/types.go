@@ -18,6 +18,40 @@ const (
 	AssetIndices AssetClass = "indices"
 )
 
+// Time is a date-time
+type Time time.Time
+
+func (t *Time) UnmarshalJSON(data []byte) error {
+	unquoteData, err := strconv.Unquote(string(data))
+	if err != nil {
+		return err
+	}
+
+	if parsedTime, err := time.Parse("2006-01-02T15:04:05.000-0700", unquoteData); err == nil {
+		*t = Time(parsedTime)
+		return nil
+	}
+
+	if parsedTime, err := time.Parse("2006-01-02T15:04:05-07:00", unquoteData); err == nil {
+		*t = Time(parsedTime)
+		return nil
+	}
+
+	if parsedTime, err := time.Parse("2006-01-02T15:04:05.000Z", unquoteData); err == nil {
+		*t = Time(parsedTime)
+		return nil
+	}
+
+	if parsedTime, err := time.Parse("2006-01-02T15:04:05Z", unquoteData); err != nil {
+		return err
+	} else {
+		*t = Time(parsedTime)
+	}
+
+	return nil
+}
+
+// Date is a short date without a time component of the format: "2006-01-02"
 type Date time.Time
 
 // PathFormat used to string format for use as a path parameter
@@ -25,6 +59,20 @@ func (d Date) PathFormat() string {
 	return time.Time(d).Format("2006-01-02")
 }
 
+func (d *Date) UnmarshalJSON(data []byte) error {
+	unquoteData, err := strconv.Unquote(string(data))
+	if err != nil {
+		return err
+	}
+	t, err := time.Parse("2006-01-02", unquoteData)
+	if err != nil {
+		return err
+	}
+	*d = Date(t)
+	return nil
+}
+
+// Millis represents a Unix time in milliseconds
 type Millis time.Time
 
 // Unmarshaler interface to get timestamp string into Millis type

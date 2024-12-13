@@ -22,17 +22,20 @@ func run(ctx context.Context, getenv func(string) string, stdout, stderr io.Writ
 
 	polyClient := polygon.New(getenv("POLYGON_API_KEY"), time.Second*10)
 
-	params := &models.GroupedDailyParams{
-		Date: models.Date(time.Date(2024, 12, 12, 0, 0, 0, 0, time.UTC)),
+	//params := &models.GroupedDailyParams{
+	//	Date: models.Date(time.Date(2024, 12, 12, 0, 0, 0, 0, time.UTC)),
+	//}
+	//res, err := polyClient.GroupedDailyBars(ctx, params)
+
+	params := &models.TickerDetailsParams{
+		Ticker: "AAPL",
 	}
-	res, err := polyClient.GroupedDailyBars(ctx, params)
+	res, err := polyClient.GetTickerDetails(ctx, params)
 	if err != nil {
 		fmt.Fprintf(stderr, "Error happened here\n")
 		return err
 	}
-	for _, t := range res.Results {
-		fmt.Fprintf(stdout, "%+v\n", t)
-	}
+	fmt.Fprintf(stdout, "%+v\n", res)
 	return nil
 }
 

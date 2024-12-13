@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	ListTickersPath = "/v3/reference/tickers"
+	ListTickersPath   = "/v3/reference/tickers"
+	TickerDetailsPath = "/v3/reference/tickers/{ticker}"
 )
 
 // ListTickers retrieves a list of tickers
@@ -28,4 +29,10 @@ func (c *Client) ListTickers(ctx context.Context, params *models.ListTickersPara
 		err := c.CallURL(ctx, uri, res)
 		return res, res.Results, err
 	})
+}
+
+func (c *Client) GetTickerDetails(ctx context.Context, params *models.TickerDetailsParams) (*models.TickerDetailsResponse, error) {
+	res := &models.TickerDetailsResponse{}
+	err := c.Call(ctx, TickerDetailsPath, params, res)
+	return res, err
 }
