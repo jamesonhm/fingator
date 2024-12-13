@@ -28,7 +28,7 @@ func TestEncodePolyParams(t *testing.T) {
 	}
 
 	expected := "/v1/1.273/teststr"
-	actual := uri.New("").EncodeParams(testPath, params)
+	actual := uri.New().EncodeParams(testPath, params)
 	assert.Equal(t, actual, expected)
 }
 
@@ -47,7 +47,7 @@ func TestEncodePolyDate(t *testing.T) {
 	}
 
 	expected := "/v1/2023-12-06?date=2023-12-06"
-	actual := uri.New("").EncodeParams(testPath, params)
+	actual := uri.New().EncodeParams(testPath, params)
 	assert.Equal(t, actual, expected)
 }
 
@@ -66,6 +66,6 @@ func TestEncodePointer(t *testing.T) {
 		StrQ: &str,
 	}
 	expected := "/v2/2023-12-06?str=teststr"
-	actual := uri.New("").EncodeParams(testPath, &params)
+	actual := uri.New().EncodeParams(testPath, &params)
 	assert.Equal(t, actual, expected)
 }

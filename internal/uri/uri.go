@@ -77,7 +77,7 @@ func formatFieldValue(field reflect.Value) string {
 
 	switch typedValue := field.Interface().(type) {
 	case models.Date:
-		return typedValue.Format()
+		return typedValue.PathFormat()
 	}
 
 	switch field.Kind() {

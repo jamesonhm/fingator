@@ -4,21 +4,6 @@ import (
 	"time"
 )
 
-type ListTickersParams struct {
-	TickerEQ *string     `query:"ticker"`
-	Type     *string     `query:"type"`
-	Market   *AssetClass `query:"market"`
-	Exchange *string     `query:"exchange"`
-	CUSIP    *int        `query:"cusip"`
-	CIK      *int        `query:"cik"`
-	Date     *Date       `query:"date"`
-	Active   *bool       `query:"active"`
-	Search   *string     `query:"search"`
-	Sort     *Sort       `query:"sort"`
-	Order    *Order      `query:"order"`
-	Limit    *int        `query:"limit"`
-}
-
 type Ticker struct {
 	Active          bool      `json:"active"`
 	Cik             string    `json:"cik"`
@@ -34,7 +19,32 @@ type Ticker struct {
 	Type            string    `json:"type"`
 }
 
+type ListTickersParams struct {
+	TickerEQ *string     `query:"ticker"`
+	Type     *string     `query:"type"`
+	Market   *AssetClass `query:"market"`
+	Exchange *string     `query:"exchange"`
+	CUSIP    *int        `query:"cusip"`
+	CIK      *int        `query:"cik"`
+	Date     *Date       `query:"date"`
+	Active   *bool       `query:"active"`
+	Search   *string     `query:"search"`
+	Sort     *Sort       `query:"sort"`
+	Order    *Order      `query:"order"`
+	Limit    *int        `query:"limit"`
+}
+
 type ListTickersResponse struct {
 	BaseResponse
 	Results []Ticker `json:"results"`
+}
+
+type TickerDetailsParams struct {
+	Ticker string `path:"ticker"`
+	Date   *Date  `query:"date"`
+}
+
+type TickerDetailsResponse struct {
+	BaseResponse
+	Results Ticker `json:"results,omitempty"`
 }
