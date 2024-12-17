@@ -5,17 +5,17 @@ import (
 	"fmt"
 )
 
-type FieldName string
-
-const (
-	CIK      FieldName = "cik"
-	Name     FieldName = "name"
-	Ticker   FieldName = "ticker"
-	Exchange FieldName = "exchange"
-)
+//type FieldName string
+//
+//const (
+//	CIK      FieldName = "cik"
+//	Name     FieldName = "name"
+//	Ticker   FieldName = "ticker"
+//	Exchange FieldName = "exchange"
+//)
 
 type CompanyTickersResponse struct {
-	Fields []FieldName     `json:"fields"`
+	Fields []string        `json:"fields"`
 	Data   [][]interface{} `json:"data"`
 }
 

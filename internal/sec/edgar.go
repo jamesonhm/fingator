@@ -93,6 +93,7 @@ func (c *Client) GetCompanyTickers(ctx context.Context) ([]models.Company, error
 		ticker, ok := entry[2].(string)
 		if !ok {
 			fmt.Println("invalid ticker type")
+			continue
 		}
 
 		var exch string
@@ -113,7 +114,12 @@ func (c *Client) GetCompanyTickers(ctx context.Context) ([]models.Company, error
 			fmt.Printf("null exch: %+v\n", company)
 		}
 		companies = append(companies, company)
-
 	}
 	return companies, nil
+}
+
+func (c *Client) GetCompanyFacts(ctx context.Context, params *models.CompanyFactsParams) (*models.CompanyFactsResponse, error) {
+	res := &models.CompanyFactsResponse{}
+	err := c.Call(ctx, CompanyFactsPath, params, res)
+	return res, err
 }

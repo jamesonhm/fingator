@@ -6,7 +6,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/jamesonhm/fingator/internal/polygon/models"
+	pmodels "github.com/jamesonhm/fingator/internal/polygon/models"
+	emodels "github.com/jamesonhm/fingator/internal/sec/models"
 )
 
 const (
@@ -76,8 +77,10 @@ func formatFieldValue(field reflect.Value) string {
 	}
 
 	switch typedValue := field.Interface().(type) {
-	case models.Date:
+	case pmodels.Date:
 		return typedValue.PathFormat()
+	case emodels.NumericCIK:
+		return typedValue.Pad()
 	}
 
 	switch field.Kind() {
