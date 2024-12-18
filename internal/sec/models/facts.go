@@ -39,3 +39,11 @@ type UnitEntry struct {
 	FiscalPeriod string      `json:"fp"`
 	Form         string      `json:"form"`
 }
+
+var XBRLTags = map[string][]string{
+	"CashFlow":         {"NetCashProvidedByUsedInOperatingActivities"},
+	"CapEx":            {"PaymentsToAcquirePropertyPlantAndEquipment"},
+	"Revenue":          {"Revenues"},
+	"NetIncome":        {"NetIncomeLoss"},
+	"OperatingExpense": {"OperatingExpenses"},
+}
