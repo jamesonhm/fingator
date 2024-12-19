@@ -105,14 +105,12 @@ func (c *Client) GetCompanyTickers(ctx context.Context) ([]models.Company, error
 			}
 		}
 		company := models.Company{
-			CIK:      int64(cik),
+			CIK:      models.NumericCIK(cik),
 			Name:     name,
 			Ticker:   ticker,
 			Exchange: exch,
 		}
-		if company.Exchange == "" {
-			fmt.Printf("null exch: %+v\n", company)
-		} else {
+		if company.Exchange != "" {
 			companies = append(companies, company)
 		}
 	}

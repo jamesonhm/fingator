@@ -20,7 +20,7 @@ type CompanyTickersResponse struct {
 }
 
 type Company struct {
-	CIK      int64
+	CIK      NumericCIK
 	Name     string
 	Ticker   string
 	Exchange string
@@ -41,7 +41,7 @@ func (c *Company) UnmarshallJSON(data []byte) error {
 	if !ok {
 		return fmt.Errorf("invalik cik type")
 	}
-	c.CIK = int64(cik)
+	c.CIK = NumericCIK(int64(cik))
 
 	name, ok := rawData[1].(string)
 	if !ok {

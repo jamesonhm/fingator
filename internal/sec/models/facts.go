@@ -40,10 +40,16 @@ type UnitEntry struct {
 	Form         string      `json:"form"`
 }
 
-var XBRLTags = map[string][]string{
-	"CashFlow":         {"NetCashProvidedByUsedInOperatingActivities"},
-	"CapEx":            {"PaymentsToAcquirePropertyPlantAndEquipment"},
-	"Revenue":          {"Revenues"},
-	"NetIncome":        {"NetIncomeLoss"},
-	"OperatingExpense": {"OperatingExpenses"},
+type FilteredFact struct {
+	Category string
+	Tag      string
+	FactData
+}
+
+type DCFData struct {
+	CashFlow         FactData
+	CapEx            FactData
+	Revenue          FactData
+	NetIncome        FactData
+	OperatingExpense FactData
 }
