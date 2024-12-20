@@ -9,19 +9,29 @@ import (
 func FilterDCF(cf *models.CompanyFactsResponse, d *models.DCFData) []*models.FilteredFact {
 
 	var XBRLTags = map[string][]string{
-		"CashFlow":         {"NetCashProvidedByUsedInOperatingActivities"},
-		"CapEx":            {"PaymentsToAcquirePropertyPlantAndEquipment"},
-		"Revenue":          {"Revenues"},
-		"NetIncome":        {"NetIncomeLoss"},
-		"OperatingExpense": {"OperatingExpenses"},
-		"MadeUpCategory":   {"MadeUpTag"},
+		"CashFlow": {"NetCashProvidedByUsedInOperatingActivities"},
+		//"NetIncome":          {"NetIncomeLoss", "NetIncomeLossAvailableToCommonStockholdersBasic", "ProfitLoss"},
+		//"NonCashExpense":     {"DepreciationAndAmortization", "DepreciationDepletionAndAmortization"},
+		//"AccountsReceivable": {"IncreaseDecreaseInAccountsReceivable", "AccountsReceivableNetCurrent"},
+		//"Inventory":          {"IncreaseDecreaseInInventories", "InventoryNet"},
+		//"AccountsPayable":    {"IncreaseDecreaseInAccountsPayable", "AccountsPayableCurrent"},
+		//"OperatingExpense":   {"OperatingExpenses"},
+		"CapEx":           {"PaymentsToAcquirePropertyPlantAndEquipment", "CapitalExpenditures"},
+		"InterestPaid":    {"InterestPaid", "InterestPaidNet", "InterestPaidCapitalized"},
+		"DebtRepayment":   {"RepaymentsOfDebtAndCapitalLeaseObligations", "RepaymentsOfDebt", "RepaymentsOfLongTermDebt"},
+		"DebtIssuance":    {"ProceedsFromIssuanceOfDebt", "ProceedsFromIssuanceOfLongTermDebt"},
+		"EquityValue":     {"StockholdersEquity", "MarketCapitalization"},
+		"DebtValue":       {"LongTermDebt", "DebtCurrent"},
+		"InterestExpense": {"InterestExpense", "InterestExpenseDebt"},
+		"TaxRate":         {"EffectiveIncomeTaxRateContinuingOperations", "IncomeTaxExpenseBenefit"},
+		"MadeUpCategory":  {"MadeUpTag"},
 	}
 
 	var filteredFacts []*models.FilteredFact
 	for key, tags := range XBRLTags {
 		factData, err := findFact(cf.Facts.Data, key, tags)
 		if err != nil {
-			fmt.Printf("%w\n", err)
+			fmt.Printf("%v\n", err)
 			continue
 		}
 		filteredFacts = append(filteredFacts, factData)
