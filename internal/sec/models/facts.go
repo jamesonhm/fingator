@@ -19,7 +19,8 @@ type CompanyFactsResponse struct {
 	CIK        int    `json:"cik"`
 	EntityName string `json:"entityName"`
 	Facts      struct {
-		Data map[string]FactData `json:"us-gaap"`
+		USGAAP map[string]FactData `json:"us-gaap"`
+		DEI    map[string]FactData `json:"dei"`
 	} `json:"facts"`
 }
 
@@ -29,7 +30,9 @@ type FactData struct {
 }
 
 type UnitData struct {
-	USD []UnitEntry `json:"USD"`
+	USD    []UnitEntry `json:"USD,omitempty"`
+	Pure   []UnitEntry `json:"pure,omitempty"`
+	Shares []UnitEntry `json:"shares,omitempty"`
 }
 
 type UnitEntry struct {

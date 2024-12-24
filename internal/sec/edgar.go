@@ -2,11 +2,11 @@ package edgar
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/jamesonhm/fingator/internal/encdec"
 	"github.com/jamesonhm/fingator/internal/sec/models"
 	"github.com/jamesonhm/fingator/internal/uri"
 )
@@ -15,6 +15,7 @@ const (
 	CompanyTickerCIKPath = "https://www.sec.gov/files/company_tickers_exchange.json"
 	BaseURL              = "https://data.sec.gov"
 	CompanyFactsPath     = "/api/xbrl/companyfacts/CIK{cik_padded}.json"
+	LatestFilingsPath    = "https://www.sec.gov/cgi-bin/browse-edgar"
 )
 
 type Client struct {
@@ -38,14 +39,14 @@ func New(agentName, agentEmail string, timeout time.Duration) Client {
 }
 
 // Call makes API call based on path and params
-func (c *Client) Call(ctx context.Context, path string, params, response any) error {
+func (c *Client) Call(ctx context.Context, base string, path string, params, response any, decFunc models.DecFunc) error {
 	uri := c.uriBuilder.EncodeParams(path, params)
-	uri = c.baseurl + uri
-	fmt.Printf("client-call-uri: %s\n", uri)
-	return c.CallURL(ctx, uri, response)
+	uri = base + uri
+	//fmt.Printf("client-call-uri: %s\n", uri)
+	return c.CallURL(ctx, uri, response, decFunc)
 }
 
-func (c *Client) CallURL(ctx context.Context, uri string, response any) error {
+func (c *Client) CallURL(ctx context.Context, uri string, response any, decFunc models.DecFunc) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
 	if err != nil {
 		return err
@@ -58,7 +59,8 @@ func (c *Client) CallURL(ctx context.Context, uri string, response any) error {
 	}
 
 	defer resp.Body.Close()
-	if err := json.NewDecoder(resp.Body).Decode(response); err != nil {
+	//if err := json.NewDecoder(resp.Body).Decode(response); err != nil {
+	if err := decFunc(resp, response); err != nil {
 		return fmt.Errorf("error decoding json: %w", err)
 	}
 
@@ -68,7 +70,7 @@ func (c *Client) CallURL(ctx context.Context, uri string, response any) error {
 func (c *Client) GetCompanyTickers(ctx context.Context) ([]models.Company, error) {
 	res := &models.CompanyTickersResponse{}
 	var companies []models.Company
-	err := c.CallURL(ctx, CompanyTickerCIKPath, res)
+	err := c.CallURL(ctx, CompanyTickerCIKPath, res, encdec.DecodeJsonResp)
 	if err != nil {
 		return companies, err
 	}
@@ -119,6 +121,12 @@ func (c *Client) GetCompanyTickers(ctx context.Context) ([]models.Company, error
 
 func (c *Client) GetCompanyFacts(ctx context.Context, params *models.CompanyFactsParams) (*models.CompanyFactsResponse, error) {
 	res := &models.CompanyFactsResponse{}
-	err := c.Call(ctx, CompanyFactsPath, params, res)
+	err := c.Call(ctx, BaseURL, CompanyFactsPath, params, res, encdec.DecodeJsonResp)
+	return res, err
+}
+
+func (c *Client) FetchLatestFiling(ctx context.Context, params *models.LatestFilingsParams) (*models.LatestFilingsResponse, error) {
+	res := &models.LatestFilingsResponse{}
+	err := c.Call(ctx, LatestFilingsPath, "", params, res, encdec.DecodeXmlResp)
 	return res, err
 }

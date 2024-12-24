@@ -2,9 +2,12 @@ package models
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 )
+
+type DecFunc func(r *http.Response, v any) error
 
 // Date is a short date without a time component of the format: "2006-01-02"
 type Date time.Time
@@ -31,3 +34,56 @@ func (d *Date) UnmarshalJSON(data []byte) error {
 func (d Date) String() string {
 	return fmt.Sprintf("%v", time.Time(d).Format(time.DateOnly))
 }
+
+// Time is a date-time
+type Time time.Time
+
+func (t *Time) UnmarshalXML(data []byte) error {
+	unquoteData, err := strconv.Unquote(string(data))
+	if err != nil {
+		return err
+	}
+
+	if parsedTime, err := time.Parse("2006-01-02T15:04:05.000-0700", unquoteData); err == nil {
+		*t = Time(parsedTime)
+		return nil
+	}
+
+	if parsedTime, err := time.Parse("2006-01-02T15:04:05-07:00", unquoteData); err == nil {
+		*t = Time(parsedTime)
+		return nil
+	}
+
+	if parsedTime, err := time.Parse("2006-01-02T15:04:05.000Z", unquoteData); err == nil {
+		*t = Time(parsedTime)
+		return nil
+	}
+
+	if parsedTime, err := time.Parse("2006-01-02T15:04:05Z", unquoteData); err != nil {
+		return err
+	} else {
+		*t = Time(parsedTime)
+	}
+
+	return nil
+}
+
+type Action string
+
+const (
+	GetCurrent Action = "getcurrent"
+)
+
+type Ownership string
+
+const (
+	Include Ownership = "include"
+	Exclude Ownership = "exclude"
+	Only    Ownership = "only"
+)
+
+type Output string
+
+const (
+	Atom Output = "atom"
+)

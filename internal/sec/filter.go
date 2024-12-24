@@ -29,7 +29,7 @@ func FilterDCF(cf *models.CompanyFactsResponse, d *models.DCFData) []*models.Fil
 
 	var filteredFacts []*models.FilteredFact
 	for key, tags := range XBRLTags {
-		factData, err := findFact(cf.Facts.Data, key, tags)
+		factData, err := findFact(cf.Facts.USGAAP, key, tags)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			continue
@@ -52,5 +52,5 @@ func findFact(d map[string]models.FactData, key string, tags []string) (*models.
 			FactData: fact,
 		}, nil
 	}
-	return nil, fmt.Errorf("No fact found for %s", key)
+	return nil, fmt.Errorf("\tNo fact found for %s", key)
 }
