@@ -9,6 +9,8 @@ import (
 	"github.com/jamesonhm/fingator/internal/encdec"
 	"github.com/jamesonhm/fingator/internal/sec/models"
 	"github.com/jamesonhm/fingator/internal/uri"
+	"golang.org/x/net/html"
+	//"golang.org/x/net/html/atom"
 )
 
 const (
@@ -129,4 +131,43 @@ func (c *Client) FetchLatestFiling(ctx context.Context, params *models.LatestFil
 	res := &models.LatestFilingsResponse{}
 	err := c.Call(ctx, LatestFilingsPath, "", params, res, encdec.DecodeXmlResp)
 	return res, err
+}
+
+func (c *Client) InfotableURLFromHTML(ctx context.Context, fe models.FilingEntry) (string, error) {
+	url := fe.Link.HRef.String()
+	fmt.Printf("URL: %s\n", url)
+	res := &html.Node{}
+	err := c.CallURL(ctx, url, res, encdec.DecodeHTMLResp)
+	if err != nil {
+		fmt.Printf("Error calling url")
+		return "", err
+	}
+
+	fmt.Printf("NodeRes: %+v\n", res)
+	//doc, err := html.Parse(resp.Body)
+
+	//if err != nil {
+	//	return "", err
+	//}
+
+	//for n := range doc.Descendants() {
+	//	//fmt.Printf(n.Data)
+	//	fmt.Printf("Atom: %v\n", n.DataAtom)
+	//	if n.Type == html.ElementNode && n.DataAtom == atom.Table {
+	//		for _, a := range n.Attr {
+	//			if a.Key == "summary" {
+	//				return fmt.Sprintf("  - %s", a.Val), nil
+	//			}
+	//		}
+	//	}
+
+	//}
+	//pathParts[len(pathParts)-1] = "infotable.xml"
+	//infotablePath := strings.Join(pathParts, "/")
+	//u := &url.URL{
+	//	Scheme: fe.Link.HRef.Scheme,
+	//	Host:   fe.Link.HRef.Host,
+	//	Path:   infotablePath,
+	//}
+	return "", nil
 }

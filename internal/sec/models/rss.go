@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"encoding/xml"
+	"net/url"
+	"time"
+)
 
 //LatestFilingsPath = "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&CIK=&type={form_filter}&company=&dateb=&owner=include&start=0&count=100&output=atom"
 
@@ -32,9 +36,24 @@ type FilingEntry struct {
 }
 
 type Link struct {
-	HRef string `xml:"href,attr"`
+	HRef url.URL `xml:"href,attr"`
 }
 
 type Category struct {
 	Type string `xml:"term,attr"`
+}
+
+func (l *Link) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	for _, attr := range start.Attr {
+		switch attr.Name.Local {
+		case "href":
+			parsedURL, err := url.Parse(attr.Value)
+			if err != nil {
+				return err
+			}
+			l.HRef = *parsedURL
+		}
+	}
+	d.Skip()
+	return nil
 }

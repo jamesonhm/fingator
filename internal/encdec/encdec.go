@@ -3,9 +3,11 @@ package encdec
 import (
 	"encoding/json"
 	"encoding/xml"
-	//"fmt"
-	//"io"
+	"fmt"
+
 	"net/http"
+
+	"golang.org/x/net/html"
 
 	"golang.org/x/net/html/charset"
 	//"golang.org/x/text/encoding/charmap"
@@ -25,4 +27,19 @@ func DecodeXmlResp(r *http.Response, v any) error {
 	//	return nil, fmt.Errorf("unsupported charset: %s", charset)
 	//}
 	return decoder.Decode(v)
+}
+
+func DecodeHTMLResp(r *http.Response, v any) error {
+	//bytes, _ := io.ReadAll(r.Body)
+	//fmt.Println(string(bytes))
+
+	node, err := html.Parse(r.Body)
+	if err != nil {
+		return fmt.Errorf("error parsing html")
+	}
+	fmt.Printf("Node: %+v\n", node)
+	if val, ok := v.(*html.Node); ok {
+		*val = *node
+	}
+	return nil
 }

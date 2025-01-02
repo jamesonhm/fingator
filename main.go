@@ -89,6 +89,9 @@ func runEdgarFilings(ctx context.Context, getenv func(string) string, stdout, st
 
 	for _, entry := range res.Entries {
 		fmt.Fprintf(stdout, "%#v\n\n", entry)
+		fmt.Println()
+		path, _ := edgarClient.InfotableURLFromHTML(ctx, entry)
+		fmt.Fprintf(stdout, "--%s\n", path)
 	}
 
 }
