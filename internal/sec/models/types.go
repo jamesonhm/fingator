@@ -72,6 +72,7 @@ type Action string
 
 const (
 	GetCurrent Action = "getcurrent"
+	GetCompany Action = "getcompany"
 )
 
 type Ownership string

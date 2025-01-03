@@ -4,13 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/jamesonhm/fingator/internal/encdec"
 	"github.com/jamesonhm/fingator/internal/sec/models"
 	"github.com/jamesonhm/fingator/internal/uri"
 	"golang.org/x/net/html"
-	//"golang.org/x/net/html/atom"
+	"golang.org/x/net/html/atom"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -26,9 +28,10 @@ type Client struct {
 	baseurl    string
 	httpC      http.Client
 	uriBuilder *uri.URIBuilder
+	limiter    *rate.Limiter
 }
 
-func New(agentName, agentEmail string, timeout time.Duration) Client {
+func New(agentName, agentEmail string, timeout time.Duration, reqsPerSec rate.Limit) Client {
 	return Client{
 		agentName:  agentName,
 		agentEmail: agentEmail,
@@ -37,6 +40,7 @@ func New(agentName, agentEmail string, timeout time.Duration) Client {
 			Timeout: timeout,
 		},
 		uriBuilder: uri.New(),
+		limiter:    rate.NewLimiter(reqsPerSec, 1),
 	}
 }
 
@@ -49,6 +53,7 @@ func (c *Client) Call(ctx context.Context, base string, path string, params, res
 }
 
 func (c *Client) CallURL(ctx context.Context, uri string, response any, decFunc models.DecFunc) error {
+	c.limiter.Wait(ctx)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
 	if err != nil {
 		return err
@@ -144,24 +149,14 @@ func (c *Client) InfotableURLFromHTML(ctx context.Context, fe models.FilingEntry
 	}
 
 	fmt.Printf("NodeRes: %+v\n", res)
-	//doc, err := html.Parse(resp.Body)
 
-	//if err != nil {
-	//	return "", err
-	//}
-
-	//for n := range doc.Descendants() {
-	//	//fmt.Printf(n.Data)
-	//	fmt.Printf("Atom: %v\n", n.DataAtom)
-	//	if n.Type == html.ElementNode && n.DataAtom == atom.Table {
-	//		for _, a := range n.Attr {
-	//			if a.Key == "summary" {
-	//				return fmt.Sprintf("  - %s", a.Val), nil
-	//			}
-	//		}
-	//	}
-
-	//}
+	for n := range res.Descendants() {
+		//fmt.Printf(n.Data)
+		//fmt.Printf("Atom: %v\n", n.DataAtom)
+		if n.Type == html.TextNode && n.Parent.DataAtom == atom.A && strings.Contains(n.Data, ".xml") && !strings.Contains(n.Data, "primary") {
+			fmt.Printf("Data: %v, Parent Attr Href: %v\n", n.Data, n.Parent.Attr[0].Val)
+		}
+	}
 	//pathParts[len(pathParts)-1] = "infotable.xml"
 	//infotablePath := strings.Join(pathParts, "/")
 	//u := &url.URL{

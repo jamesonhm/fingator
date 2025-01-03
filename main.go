@@ -17,10 +17,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// TODO: Explore the "Must" pattern for env variables and others
+
 func runEdgarTickers(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) {
 	agentName := getenv("EDGAR_COMPANY_NAME")
 	agentEmail := getenv("EDGAR_COMPANY_EMAIL")
-	edgarClient := edgar.New(agentName, agentEmail, time.Second*10)
+	edgarClient := edgar.New(agentName, agentEmail, time.Second*10, 10)
 
 	companies, err := edgarClient.GetCompanyTickers(ctx)
 	if err != nil {
@@ -33,7 +35,7 @@ func runEdgarTickers(ctx context.Context, getenv func(string) string, stdout, st
 func runEdgarFacts(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) {
 	agentName := getenv("EDGAR_COMPANY_NAME")
 	agentEmail := getenv("EDGAR_COMPANY_EMAIL")
-	edgarClient := edgar.New(agentName, agentEmail, time.Second*10)
+	edgarClient := edgar.New(agentName, agentEmail, time.Second*10, 10)
 
 	comps, err := edgarClient.GetCompanyTickers(ctx)
 	if err != nil {
@@ -72,7 +74,7 @@ func runEdgarFacts(ctx context.Context, getenv func(string) string, stdout, stde
 func runEdgarFilings(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) {
 	agentName := getenv("EDGAR_COMPANY_NAME")
 	agentEmail := getenv("EDGAR_COMPANY_EMAIL")
-	edgarClient := edgar.New(agentName, agentEmail, time.Second*10)
+	edgarClient := edgar.New(agentName, agentEmail, time.Second*10, 1)
 
 	formType := "13F-HR"
 	resCount := 100
@@ -87,7 +89,10 @@ func runEdgarFilings(ctx context.Context, getenv func(string) string, stdout, st
 		fmt.Fprintf(stderr, "error getting latest filings: %v\n", err)
 	}
 
-	for _, entry := range res.Entries {
+	for i, entry := range res.Entries {
+		if i >= 1 {
+			break
+		}
 		fmt.Fprintf(stdout, "%#v\n\n", entry)
 		fmt.Println()
 		path, _ := edgarClient.InfotableURLFromHTML(ctx, entry)

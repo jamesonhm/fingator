@@ -10,6 +10,7 @@ import (
 
 type LatestFilingsParams struct {
 	Action    Action     `query:"action"`
+	FileNum   *string    `query:"filenum"`
 	CIK       *string    `query:"cik"`
 	Type      *string    `query:"type"`
 	Company   *string    `query:"company"`
