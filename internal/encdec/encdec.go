@@ -37,7 +37,7 @@ func DecodeHTMLResp(r *http.Response, v any) error {
 	if err != nil {
 		return fmt.Errorf("error parsing html")
 	}
-	fmt.Printf("Node: %+v\n", node)
+	//fmt.Printf("Node: %+v\n", node)
 	if val, ok := v.(*html.Node); ok {
 		*val = *node
 	}

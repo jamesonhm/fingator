@@ -132,14 +132,14 @@ func (c *Client) GetCompanyFacts(ctx context.Context, params *models.CompanyFact
 	return res, err
 }
 
-func (c *Client) FetchLatestFiling(ctx context.Context, params *models.LatestFilingsParams) (*models.LatestFilingsResponse, error) {
-	res := &models.LatestFilingsResponse{}
+func (c *Client) FetchLatestFiling(ctx context.Context, params *models.BrowseEdgarParams) (*models.GetCurrentResponse, error) {
+	res := &models.GetCurrentResponse{}
 	err := c.Call(ctx, LatestFilingsPath, "", params, res, encdec.DecodeXmlResp)
 	return res, err
 }
 
 func (c *Client) InfotableURLFromHTML(ctx context.Context, fe models.FilingEntry) (string, error) {
-	url := fe.Link.HRef.String()
+	url := fe.Link.Href.String()
 	fmt.Printf("URL: %s\n", url)
 	res := &html.Node{}
 	err := c.CallURL(ctx, url, res, encdec.DecodeHTMLResp)
@@ -155,6 +155,7 @@ func (c *Client) InfotableURLFromHTML(ctx context.Context, fe models.FilingEntry
 		//fmt.Printf("Atom: %v\n", n.DataAtom)
 		if n.Type == html.TextNode && n.Parent.DataAtom == atom.A && strings.Contains(n.Data, ".xml") && !strings.Contains(n.Data, "primary") {
 			fmt.Printf("Data: %v, Parent Attr Href: %v\n", n.Data, n.Parent.Attr[0].Val)
+			return fe.Link.Href.Scheme + fe.Link.Href.Host + n.Parent.Attr[0].Val, nil
 		}
 	}
 	//pathParts[len(pathParts)-1] = "infotable.xml"
@@ -164,5 +165,5 @@ func (c *Client) InfotableURLFromHTML(ctx context.Context, fe models.FilingEntry
 	//	Host:   fe.Link.HRef.Host,
 	//	Path:   infotablePath,
 	//}
-	return "", nil
+	return "", fmt.Errorf("link to xml filing not found")
 }

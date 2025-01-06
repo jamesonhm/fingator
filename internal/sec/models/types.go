@@ -7,6 +7,18 @@ import (
 	"time"
 )
 
+type NumericCIK int
+type PaddedCIK string
+
+func (n NumericCIK) Pad() PaddedCIK {
+	return PaddedCIK(fmt.Sprintf("%010d", n))
+}
+
+func (p PaddedCIK) Num() NumericCIK {
+	num, _ := strconv.Atoi(string(p))
+	return NumericCIK(num)
+}
+
 type DecFunc func(r *http.Response, v any) error
 
 // Date is a short date without a time component of the format: "2006-01-02"
@@ -38,35 +50,35 @@ func (d Date) String() string {
 // Time is a date-time
 type Time time.Time
 
-func (t *Time) UnmarshalXML(data []byte) error {
-	unquoteData, err := strconv.Unquote(string(data))
-	if err != nil {
-		return err
-	}
-
-	if parsedTime, err := time.Parse("2006-01-02T15:04:05.000-0700", unquoteData); err == nil {
-		*t = Time(parsedTime)
-		return nil
-	}
-
-	if parsedTime, err := time.Parse("2006-01-02T15:04:05-07:00", unquoteData); err == nil {
-		*t = Time(parsedTime)
-		return nil
-	}
-
-	if parsedTime, err := time.Parse("2006-01-02T15:04:05.000Z", unquoteData); err == nil {
-		*t = Time(parsedTime)
-		return nil
-	}
-
-	if parsedTime, err := time.Parse("2006-01-02T15:04:05Z", unquoteData); err != nil {
-		return err
-	} else {
-		*t = Time(parsedTime)
-	}
-
-	return nil
-}
+//func (t *Time) UnmarshalXML(data []byte) error {
+//	unquoteData, err := strconv.Unquote(string(data))
+//	if err != nil {
+//		return err
+//	}
+//
+//	if parsedTime, err := time.Parse("2006-01-02T15:04:05.000-0700", unquoteData); err == nil {
+//		*t = Time(parsedTime)
+//		return nil
+//	}
+//
+//	if parsedTime, err := time.Parse("2006-01-02T15:04:05-07:00", unquoteData); err == nil {
+//		*t = Time(parsedTime)
+//		return nil
+//	}
+//
+//	if parsedTime, err := time.Parse("2006-01-02T15:04:05.000Z", unquoteData); err == nil {
+//		*t = Time(parsedTime)
+//		return nil
+//	}
+//
+//	if parsedTime, err := time.Parse("2006-01-02T15:04:05Z", unquoteData); err != nil {
+//		return err
+//	} else {
+//		*t = Time(parsedTime)
+//	}
+//
+//	return nil
+//}
 
 type Action string
 

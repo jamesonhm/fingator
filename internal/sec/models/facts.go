@@ -2,14 +2,7 @@ package models
 
 import (
 	"encoding/json"
-	"fmt"
 )
-
-type NumericCIK int
-
-func (c NumericCIK) Pad() string {
-	return fmt.Sprintf("%010d", c)
-}
 
 type CompanyFactsParams struct {
 	CIK NumericCIK `path:"cik_padded"`
