@@ -22,12 +22,6 @@ type BrowseEdgarParams struct {
 	Output    Output     `query:"output"`
 }
 
-type GetCurrentResponse struct {
-	Title   string        `xml:"title"`
-	Updated time.Time     `xml:"updated"`
-	Entries []FilingEntry `xml:"entry"`
-}
-
 type FetchFilingsResponse struct {
 	CompanyInfo CompanyInfo   `xml:"company-info,omitempty"`
 	Entries     []FilingEntry `xml:"entry"`
@@ -102,4 +96,19 @@ func (l *Link) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	}
 	d.Skip()
 	return nil
+}
+
+type InformationTable struct {
+	InfoTable []Holding `xml:"infoTable"`
+}
+
+type Holding struct {
+	NameOfIssuer   string `xml:"nameOfIssuer"`
+	TitleOfClass   string `xml:"titleOfClass"`
+	CUSIP          string `xml:"cusip"`
+	Value          int    `xml:"value"`
+	SharesOrPrnAmt struct {
+		Amount int    `xml:"sshPrnamt"`
+		Type   string `xml:"sshPrnamtType"`
+	}
 }
