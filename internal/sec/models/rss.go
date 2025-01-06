@@ -12,7 +12,7 @@ import (
 type BrowseEdgarParams struct {
 	Action    Action     `query:"action"`
 	FileNum   *string    `query:"filenum"`
-	CIK       *string    `query:"cik"`
+	CIK       *string    `query:"CIK"`
 	Type      *string    `query:"type"`
 	Company   *string    `query:"company"`
 	DateB     *string    `query:"dateb"`
@@ -28,7 +28,7 @@ type GetCurrentResponse struct {
 	Entries []FilingEntry `xml:"entry"`
 }
 
-type GetCompanyResponse struct {
+type FetchFilingsResponse struct {
 	CompanyInfo CompanyInfo   `xml:"company-info,omitempty"`
 	Entries     []FilingEntry `xml:"entry"`
 	Title       string        `xml:"title"`
@@ -67,8 +67,8 @@ func (fe *FilingEntry) AccessionNo() string {
 	return strings.Split(fe.ID, "=")[1]
 }
 
-func (fe *FilingEntry) CIK() PaddedCIK {
-	return PaddedCIK(strings.Split(fe.AccessionNo(), "-")[0])
+func (fe *FilingEntry) CIK() string {
+	return strings.Split(fe.AccessionNo(), "-")[0]
 }
 
 type Content struct {

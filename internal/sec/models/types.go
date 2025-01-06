@@ -8,15 +8,9 @@ import (
 )
 
 type NumericCIK int
-type PaddedCIK string
 
-func (n NumericCIK) Pad() PaddedCIK {
-	return PaddedCIK(fmt.Sprintf("%010d", n))
-}
-
-func (p PaddedCIK) Num() NumericCIK {
-	num, _ := strconv.Atoi(string(p))
-	return NumericCIK(num)
+func (n NumericCIK) Pad() string {
+	return fmt.Sprintf("%010d", n)
 }
 
 type DecFunc func(r *http.Response, v any) error

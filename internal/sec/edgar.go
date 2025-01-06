@@ -48,7 +48,7 @@ func New(agentName, agentEmail string, timeout time.Duration, reqsPerSec rate.Li
 func (c *Client) Call(ctx context.Context, base string, path string, params, response any, decFunc models.DecFunc) error {
 	uri := c.uriBuilder.EncodeParams(path, params)
 	uri = base + uri
-	//fmt.Printf("client-call-uri: %s\n", uri)
+	fmt.Printf("client-call-uri: %s\n", uri)
 	return c.CallURL(ctx, uri, response, decFunc)
 }
 
@@ -132,8 +132,8 @@ func (c *Client) GetCompanyFacts(ctx context.Context, params *models.CompanyFact
 	return res, err
 }
 
-func (c *Client) FetchLatestFiling(ctx context.Context, params *models.BrowseEdgarParams) (*models.GetCurrentResponse, error) {
-	res := &models.GetCurrentResponse{}
+func (c *Client) FetchFilings(ctx context.Context, params *models.BrowseEdgarParams) (*models.FetchFilingsResponse, error) {
+	res := &models.FetchFilingsResponse{}
 	err := c.Call(ctx, LatestFilingsPath, "", params, res, encdec.DecodeXmlResp)
 	return res, err
 }
@@ -155,7 +155,7 @@ func (c *Client) InfotableURLFromHTML(ctx context.Context, fe models.FilingEntry
 		//fmt.Printf("Atom: %v\n", n.DataAtom)
 		if n.Type == html.TextNode && n.Parent.DataAtom == atom.A && strings.Contains(n.Data, ".xml") && !strings.Contains(n.Data, "primary") {
 			fmt.Printf("Data: %v, Parent Attr Href: %v\n", n.Data, n.Parent.Attr[0].Val)
-			return fe.Link.Href.Scheme + fe.Link.Href.Host + n.Parent.Attr[0].Val, nil
+			return fe.Link.Href.Scheme + "://" + fe.Link.Href.Host + n.Parent.Attr[0].Val, nil
 		}
 	}
 	//pathParts[len(pathParts)-1] = "infotable.xml"

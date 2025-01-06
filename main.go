@@ -84,20 +84,47 @@ func runEdgarFilings(ctx context.Context, getenv func(string) string, stdout, st
 		Count:  &resCount,
 		Output: emodels.Atom,
 	}
-	res, err := edgarClient.FetchLatestFiling(ctx, params)
+	res, err := edgarClient.FetchFilings(ctx, params)
 	if err != nil {
 		fmt.Fprintf(stderr, "error getting latest filings: %v\n", err)
 	}
 
 	for i, entry := range res.Entries {
-		if i >= 1 {
+		if i >= 3 {
 			break
 		}
-		fmt.Fprintf(stdout, "%#v\n\n", entry)
+		cik := string(entry.CIK())
+		fmt.Fprintf(stdout, "Co (cik): %s (%s)\n", entry.Title, cik)
 		path, _ := edgarClient.InfotableURLFromHTML(ctx, entry)
-		fmt.Fprintf(stdout, "--%s\n", path)
+		fmt.Fprintf(stdout, "--%s\n\n", path)
 	}
 
+}
+
+func runEdgarCompanyFilings(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) {
+	agentName := getenv("EDGAR_COMPANY_NAME")
+	agentEmail := getenv("EDGAR_COMPANY_EMAIL")
+	edgarClient := edgar.New(agentName, agentEmail, time.Second*10, 1)
+
+	formType := "13F-HR"
+	resCount := 100
+	cik := "0001471384"
+	params := &emodels.BrowseEdgarParams{
+		Action: emodels.GetCompany,
+		Type:   &formType,
+		Count:  &resCount,
+		CIK:    &cik,
+		Output: emodels.Atom,
+	}
+	compRes, err := edgarClient.FetchFilings(ctx, params)
+	if err != nil {
+		fmt.Fprintf(stderr, "error getting company filings: %v\n", err)
+	}
+	fmt.Fprintf(stdout, "%+v\n", compRes.CompanyInfo)
+	for _, e := range compRes.Entries {
+		fmt.Fprintf(stdout, "Accession: %v\n\n", e.AccessionNo())
+		fmt.Fprintf(stdout, "Link: %s\n", e.Link.Href.String())
+	}
 }
 
 func runPolyGrouped(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) {
@@ -120,6 +147,8 @@ func run(ctx context.Context, getenv func(string) string, stdout, stderr io.Writ
 	//runPolyGrouped(ctx, getenv, stdout, stderr)
 	//runEdgarFacts(ctx, getenv, stdout, stderr)
 	runEdgarFilings(ctx, getenv, stdout, stderr)
+	fmt.Fprintf(stdout, "==============================================\n")
+	runEdgarCompanyFilings(ctx, getenv, stdout, stderr)
 	//runEdgarTickers(ctx, getenv, stdout, stderr)
 	return nil
 }
