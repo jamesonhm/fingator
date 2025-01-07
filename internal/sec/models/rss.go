@@ -23,28 +23,26 @@ type BrowseEdgarParams struct {
 }
 
 type FetchFilingsResponse struct {
-	CompanyInfo CompanyInfo   `xml:"company-info,omitempty"`
-	Entries     []FilingEntry `xml:"entry"`
-	Title       string        `xml:"title"`
-	Updated     time.Time     `xml:"updated"`
-}
-
-type CompanyInfo struct {
-	Addresses struct {
-		Address []struct {
-			Type    string `xml:"type,attr"`
-			City    string `xml:"city"`
-			State   string `xml:"state"`
-			Street1 string `xml:"street1"`
-			Street2 string `xml:"street2"`
-			Zip     string `xml:"zip"`
-			Phone   string `xml:"phone"`
-		} `xml:"address"`
-	} `xml:"addresses"`
-	CIK                string `xml:"cik"`
-	ConformedName      string `xml:"conformed-name"`
-	StateLocation      string `xml:"state-location"`
-	StateIncorporation string `xml:"state-of-incorporation"`
+	CompanyInfo struct {
+		Addresses struct {
+			Address []struct {
+				Type    string `xml:"type,attr"`
+				City    string `xml:"city"`
+				State   string `xml:"state"`
+				Street1 string `xml:"street1"`
+				Street2 string `xml:"street2"`
+				Zip     string `xml:"zip"`
+				Phone   string `xml:"phone"`
+			} `xml:"address"`
+		} `xml:"addresses"`
+		CIK                string `xml:"cik"`
+		ConformedName      string `xml:"conformed-name"`
+		StateLocation      string `xml:"state-location"`
+		StateIncorporation string `xml:"state-of-incorporation"`
+	} `xml:"company-info,omitempty"`
+	Entries []FilingEntry `xml:"entry"`
+	Title   string        `xml:"title"`
+	Updated time.Time     `xml:"updated"`
 }
 
 type FilingEntry struct {
@@ -54,7 +52,15 @@ type FilingEntry struct {
 	Updated time.Time `xml:"updated"`
 	Form    Category  `xml:"category"`
 	ID      string    `xml:"id"`
-	Content Content   `xml:"content,omitempty"`
+	Content struct {
+		AccessionNumber string `xml:"accession-number,omitempty"`
+		FileNumber      string `xml:"file-number,omitempty"`
+		FilingDate      string `xml:"filing-date,omitempty"`
+		FilingHref      string `xml:"filing-href,omitempty"`
+		FilingType      string `xml:"filing-type,omitempty"`
+		FilmNumber      string `xml:"film-number,omitempty"`
+		Amend           string `xml:"amend,omitempty"`
+	} `xml:"content,omitempty"`
 }
 
 func (fe *FilingEntry) AccessionNo() string {
@@ -63,16 +69,6 @@ func (fe *FilingEntry) AccessionNo() string {
 
 func (fe *FilingEntry) CIK() string {
 	return strings.Split(fe.AccessionNo(), "-")[0]
-}
-
-type Content struct {
-	AccessionNumber string `xml:"accession-number,omitempty"`
-	FileNumber      string `xml:"file-number,omitempty"`
-	FilingDate      string `xml:"filing-date,omitempty"`
-	FilingHref      string `xml:"filing-href,omitempty"`
-	FilingType      string `xml:"filing-type,omitempty"`
-	FilmNumber      string `xml:"film-number,omitempty"`
-	Amend           string `xml:"amend,omitempty"`
 }
 
 type Link struct {
@@ -98,17 +94,15 @@ func (l *Link) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	return nil
 }
 
-type InformationTable struct {
-	InfoTable []Holding `xml:"infoTable"`
-}
-
-type Holding struct {
-	NameOfIssuer   string `xml:"nameOfIssuer"`
-	TitleOfClass   string `xml:"titleOfClass"`
-	CUSIP          string `xml:"cusip"`
-	Value          int    `xml:"value"`
-	SharesOrPrnAmt struct {
-		Amount int    `xml:"sshPrnamt"`
-		Type   string `xml:"sshPrnamtType"`
-	}
+type FetchHoldingsResponse struct {
+	InfoTable []struct {
+		NameOfIssuer   string `xml:"nameOfIssuer"`
+		TitleOfClass   string `xml:"titleOfClass"`
+		CUSIP          string `xml:"cusip"`
+		Value          int    `xml:"value"`
+		SharesOrPrnAmt struct {
+			Amount int    `xml:"sshPrnamt"`
+			Type   string `xml:"sshPrnamtType"`
+		} `xml:"shrsOrPrnAmt"`
+	} `xml:"infoTable"`
 }

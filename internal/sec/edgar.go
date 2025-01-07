@@ -17,9 +17,10 @@ import (
 
 const (
 	CompanyTickerCIKPath = "https://www.sec.gov/files/company_tickers_exchange.json"
-	BaseURL              = "https://data.sec.gov"
+	DataBaseURL          = "https://data.sec.gov"
 	CompanyFactsPath     = "/api/xbrl/companyfacts/CIK{cik_padded}.json"
 	LatestFilingsPath    = "https://www.sec.gov/cgi-bin/browse-edgar"
+	MainURL              = "https://www.sec.gov"
 )
 
 type Client struct {
@@ -35,7 +36,7 @@ func New(agentName, agentEmail string, timeout time.Duration, reqsPerSec rate.Li
 	return Client{
 		agentName:  agentName,
 		agentEmail: agentEmail,
-		baseurl:    BaseURL,
+		baseurl:    DataBaseURL,
 		httpC: http.Client{
 			Timeout: timeout,
 		},
@@ -128,7 +129,7 @@ func (c *Client) GetCompanyTickers(ctx context.Context) ([]models.Company, error
 
 func (c *Client) GetCompanyFacts(ctx context.Context, params *models.CompanyFactsParams) (*models.CompanyFactsResponse, error) {
 	res := &models.CompanyFactsResponse{}
-	err := c.Call(ctx, BaseURL, CompanyFactsPath, params, res, encdec.DecodeJsonResp)
+	err := c.Call(ctx, DataBaseURL, CompanyFactsPath, params, res, encdec.DecodeJsonResp)
 	return res, err
 }
 
@@ -140,7 +141,7 @@ func (c *Client) FetchFilings(ctx context.Context, params *models.BrowseEdgarPar
 
 func (c *Client) InfotableURLFromHTML(ctx context.Context, fe models.FilingEntry) (string, error) {
 	url := fe.Link.Href.String()
-	fmt.Printf("URL: %s\n", url)
+	//fmt.Printf("URL: %s\n", url)
 	res := &html.Node{}
 	err := c.CallURL(ctx, url, res, encdec.DecodeHTMLResp)
 	if err != nil {
@@ -148,22 +149,17 @@ func (c *Client) InfotableURLFromHTML(ctx context.Context, fe models.FilingEntry
 		return "", err
 	}
 
-	fmt.Printf("NodeRes: %+v\n", res)
-
 	for n := range res.Descendants() {
-		//fmt.Printf(n.Data)
-		//fmt.Printf("Atom: %v\n", n.DataAtom)
 		if n.Type == html.TextNode && n.Parent.DataAtom == atom.A && strings.Contains(n.Data, ".xml") && !strings.Contains(n.Data, "primary") {
-			fmt.Printf("Data: %v, Parent Attr Href: %v\n", n.Data, n.Parent.Attr[0].Val)
-			return fe.Link.Href.Scheme + "://" + fe.Link.Href.Host + n.Parent.Attr[0].Val, nil
+			//fmt.Printf("Data: %v, Parent Attr Href: %v\n", n.Data, n.Parent.Attr[0].Val)
+			return MainURL + n.Parent.Attr[0].Val, nil
 		}
 	}
-	//pathParts[len(pathParts)-1] = "infotable.xml"
-	//infotablePath := strings.Join(pathParts, "/")
-	//u := &url.URL{
-	//	Scheme: fe.Link.HRef.Scheme,
-	//	Host:   fe.Link.HRef.Host,
-	//	Path:   infotablePath,
-	//}
 	return "", fmt.Errorf("link to xml filing not found")
+}
+
+func (c *Client) FetchHoldings(ctx context.Context, url string) (*models.InformationTable, error) {
+	res := &models.InformationTable{}
+	err := c.CallURL(ctx, url, res, encdec.DecodeXmlResp)
+	return res, err
 }

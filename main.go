@@ -120,10 +120,23 @@ func runEdgarCompanyFilings(ctx context.Context, getenv func(string) string, std
 	if err != nil {
 		fmt.Fprintf(stderr, "error getting company filings: %v\n", err)
 	}
-	fmt.Fprintf(stdout, "%+v\n", compRes.CompanyInfo)
+	fmt.Fprintf(stdout, "%+v\n\n", compRes.CompanyInfo)
 	for _, e := range compRes.Entries {
-		fmt.Fprintf(stdout, "Accession: %v\n\n", e.AccessionNo())
+		fmt.Fprintf(stdout, "\nAccession: %v\n", e.AccessionNo())
 		fmt.Fprintf(stdout, "Link: %s\n", e.Link.Href.String())
+		path, _ := edgarClient.InfotableURLFromHTML(ctx, e)
+		fmt.Fprintf(stdout, "--%s\n", path)
+		holdings, err := edgarClient.FetchHoldings(ctx, path)
+		if err != nil {
+			fmt.Fprintf(stderr, "%v\n", err)
+			continue
+		}
+		for i, h := range holdings.InfoTable {
+			if i >= 10 {
+				break
+			}
+			fmt.Fprintf(stdout, "*%+v\n", h)
+		}
 	}
 }
 
@@ -146,8 +159,8 @@ func run(ctx context.Context, getenv func(string) string, stdout, stderr io.Writ
 
 	//runPolyGrouped(ctx, getenv, stdout, stderr)
 	//runEdgarFacts(ctx, getenv, stdout, stderr)
-	runEdgarFilings(ctx, getenv, stdout, stderr)
-	fmt.Fprintf(stdout, "==============================================\n")
+	//runEdgarFilings(ctx, getenv, stdout, stderr)
+	//fmt.Fprintf(stdout, "==============================================\n")
 	runEdgarCompanyFilings(ctx, getenv, stdout, stderr)
 	//runEdgarTickers(ctx, getenv, stdout, stderr)
 	return nil
