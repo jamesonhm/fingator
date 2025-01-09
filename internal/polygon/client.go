@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jamesonhm/fingator/internal/uri"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -19,9 +20,10 @@ type Client struct {
 	apiKey     string
 	httpC      http.Client
 	uriBuilder *uri.URIBuilder
+	limiter    *rate.Limiter
 }
 
-func New(apiKey string, timeout time.Duration) Client {
+func New(apiKey string, timeout time.Duration, reqsPerSec rate.Limit) Client {
 	return Client{
 		baseurl: APIURL,
 		apiKey:  apiKey,
@@ -29,6 +31,7 @@ func New(apiKey string, timeout time.Duration) Client {
 			Timeout: timeout,
 		},
 		uriBuilder: uri.New(),
+		limiter:    rate.NewLimiter(reqsPerSec, 1),
 	}
 }
 

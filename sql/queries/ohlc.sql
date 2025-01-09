@@ -1,5 +1,5 @@
 -- name: CreateTickerTimestamp :one
-INSERT INTO ohlc (ticker, ts, open, high, low, close, num_trans, volume, vol_weighted)
+INSERT INTO ohlc (ticker, ts, open, high, low, close, volume)
 VALUES (
     $1,
     $2,
@@ -7,16 +7,12 @@ VALUES (
     $4,
     $5,
     $6,
-    $7,
-    $9
+    $7
     )
-ON CONFLICT ON CONSTRAINT ohlc_pkey DO UPDATE SET (
+ON CONFLICT ON CONSTRAINT ohlc_pkey DO UPDATE SET 
     open = EXCLUDED.open,
     high = EXCLUDED.high,
     low = EXCLUDED.low,
     close = EXCLUDED.close,
-    num_trans = EXCLUDED.num_trans,
-    volume = EXCLUDED.volume,
-    vol_weighted = EXCLUDED.vol_weighted
-)
+    volume = EXCLUDED.volume
 RETURNING *;

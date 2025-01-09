@@ -19,7 +19,7 @@ type Agg struct {
 	Close        float64 `json:"c,omitempty"`
 	High         float64 `json:"h,omitempty"`
 	Low          float64 `json:"l,omitempty"`
-	Transactions int64   `json:"n,omitempty"`
+	Transactions int32   `json:"n,omitempty"`
 	Open         float64 `json:"o,omitempty"`
 	Timestamp    Millis  `json:"t,omitempty"`
 	Volume       float64 `json:"v,omitempty"`

@@ -158,8 +158,8 @@ func (c *Client) InfotableURLFromHTML(ctx context.Context, fe models.FilingEntry
 	return "", fmt.Errorf("link to xml filing not found")
 }
 
-func (c *Client) FetchHoldings(ctx context.Context, url string) (*models.InformationTable, error) {
-	res := &models.InformationTable{}
+func (c *Client) FetchHoldings(ctx context.Context, url string) (*models.FetchHoldingsResponse, error) {
+	res := &models.FetchHoldingsResponse{}
 	err := c.CallURL(ctx, url, res, encdec.DecodeXmlResp)
 	return res, err
 }

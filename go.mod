@@ -9,4 +9,7 @@ require (
 	golang.org/x/time v0.8.0
 )
 
-require golang.org/x/text v0.21.0 // indirect
+require (
+	github.com/lib/pq v1.10.9 // indirect
+	golang.org/x/text v0.21.0 // indirect
+)
