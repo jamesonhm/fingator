@@ -16,3 +16,7 @@ ON CONFLICT ON CONSTRAINT ohlc_pkey DO UPDATE SET
     close = EXCLUDED.close,
     volume = EXCLUDED.volume
 RETURNING *;
+
+-- name: OHLCStartEnd :one
+SELECT MIN(ts), MAX(ts) FROM ohlc;
+

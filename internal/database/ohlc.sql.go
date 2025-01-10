@@ -62,3 +62,19 @@ func (q *Queries) CreateTickerTimestamp(ctx context.Context, arg CreateTickerTim
 	)
 	return i, err
 }
+
+const oHLCStartEnd = `-- name: OHLCStartEnd :one
+SELECT MIN(ts), MAX(ts) FROM ohlc
+`
+
+type OHLCStartEndRow struct {
+	Min interface{}
+	Max interface{}
+}
+
+func (q *Queries) OHLCStartEnd(ctx context.Context) (OHLCStartEndRow, error) {
+	row := q.db.QueryRowContext(ctx, oHLCStartEnd)
+	var i OHLCStartEndRow
+	err := row.Scan(&i.Min, &i.Max)
+	return i, err
+}

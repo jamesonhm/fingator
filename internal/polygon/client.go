@@ -46,6 +46,7 @@ func (c *Client) Call(ctx context.Context, path string, params, response any) er
 }
 
 func (c *Client) CallURL(ctx context.Context, uri string, response any) error {
+	c.limiter.Wait(ctx)
 	uri = APIURL + uri
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
 	if err != nil {

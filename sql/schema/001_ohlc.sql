@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE ohlc (
     ticker TEXT NOT NULL,
-    ts TIMESTAMP NOT NULL,
+    ts TIMESTAMP WITH TIME ZONE NOT NULL,
     open NUMERIC NOT NULL,
     high NUMERIC NOT NULL,
     low NUMERIC NOT NULL,

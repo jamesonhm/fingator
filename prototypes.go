@@ -138,13 +138,19 @@ func runEdgarCompanyFilings(ctx context.Context, getenv func(string) string, std
 
 func runPolyGrouped(ctx context.Context, dbq *database.Queries, getenv func(string) string, stdout, stderr io.Writer) {
 	polyClient := polygon.New(getenv("POLYGON_API_KEY"), time.Second*10, 0.083)
+	startEnd, err := dbq.OHLCStartEnd(ctx)
+	if err != nil {
+		fmt.Fprintf(stderr, "Error getting latest timestamp: %v\n", err)
+	}
+	fmt.Fprintf(stdout, "latest: %v, type: %T\n", startEnd.Max, startEnd.Max)
 	params := &models.GroupedDailyParams{
-		Date: models.Date(time.Date(2025, 1, 8, 0, 0, 0, 0, time.UTC)),
+		Date: models.Date(time.Date(2025, 1, 7, 0, 0, 0, 0, time.UTC)),
 	}
 	res, err := polyClient.GroupedDailyBars(ctx, params)
 	if err != nil {
 		fmt.Fprintf(stderr, "Error happened here\n")
 	}
+	fmt.Fprintf(stdout, "result count: %d, status: %s\n", res.ResultCount, res.Status)
 	for i, group := range res.Results {
 		if i >= 5 {
 			break
