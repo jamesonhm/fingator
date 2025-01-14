@@ -142,31 +142,37 @@ func runPolyGrouped(ctx context.Context, dbq *database.Queries, getenv func(stri
 	if err != nil {
 		fmt.Fprintf(stderr, "Error getting latest timestamp: %v\n", err)
 	}
-	fmt.Fprintf(stdout, "latest: %v, type: %T\n", startEnd.Max, startEnd.Max)
-	params := &models.GroupedDailyParams{
-		Date: models.Date(time.Date(2025, 1, 7, 0, 0, 0, 0, time.UTC)),
-	}
-	res, err := polyClient.GroupedDailyBars(ctx, params)
-	if err != nil {
-		fmt.Fprintf(stderr, "Error happened here\n")
-	}
-	fmt.Fprintf(stdout, "result count: %d, status: %s\n", res.ResultCount, res.Status)
-	for i, group := range res.Results {
-		if i >= 5 {
-			break
+	fmt.Fprintf(stdout, "start: %v, end: %v\n", startEnd.Min, startEnd.Max)
+	minDate := startEnd.Min.(time.Time)
+	maxDate := startEnd.Max.(time.Time)
+	di := NewDateIter(5, &minDate, &maxDate, time.Now())
+	for di.Next() {
+		fmt.Fprintf(stdout, "next date: %v\n", di.Date)
+		params := &models.GroupedDailyParams{
+			Date: models.Date(di.Date),
 		}
-		fmt.Fprintf(stdout, " * %+v\n", group)
-		_, err := dbq.CreateTickerTimestamp(ctx, database.CreateTickerTimestampParams{
-			Ticker: group.Ticker,
-			Ts:     time.Time(group.Timestamp),
-			Open:   strconv.FormatFloat(group.Open, 'f', 2, 64),
-			High:   strconv.FormatFloat(group.High, 'f', 2, 64),
-			Low:    strconv.FormatFloat(group.Low, 'f', 2, 64),
-			Close:  strconv.FormatFloat(group.Close, 'f', 2, 64),
-			Volume: strconv.FormatFloat(group.Volume, 'f', 2, 64),
-		})
+		res, err := polyClient.GroupedDailyBars(ctx, params)
 		if err != nil {
-			fmt.Fprintf(stderr, "Error adding ticker/timestamp to db: %v\n", err)
+			fmt.Fprintf(stderr, "Error happened here\n")
+		}
+		fmt.Fprintf(stdout, "result count: %d, status: %s\n", res.ResultCount, res.Status)
+		for i, group := range res.Results {
+			if i >= 5 {
+				break
+			}
+			fmt.Fprintf(stdout, " * %+v\n", group)
+			_, err := dbq.CreateTickerTimestamp(ctx, database.CreateTickerTimestampParams{
+				Ticker: group.Ticker,
+				Ts:     time.Time(group.Timestamp),
+				Open:   strconv.FormatFloat(group.Open, 'f', 2, 64),
+				High:   strconv.FormatFloat(group.High, 'f', 2, 64),
+				Low:    strconv.FormatFloat(group.Low, 'f', 2, 64),
+				Close:  strconv.FormatFloat(group.Close, 'f', 2, 64),
+				Volume: strconv.FormatFloat(group.Volume, 'f', 2, 64),
+			})
+			if err != nil {
+				fmt.Fprintf(stderr, "Error adding ticker/timestamp to db: %v\n", err)
+			}
 		}
 	}
 }

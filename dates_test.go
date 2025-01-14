@@ -11,7 +11,7 @@ func TestDateIterMax(t *testing.T) {
 	minDate := time.Date(2025, 1, 8, 14, 0, 0, 0, time.Local)
 	maxDate := time.Date(2025, 1, 9, 14, 0, 0, 0, time.Local)
 	today := time.Date(2025, 1, 13, 6, 0, 0, 0, time.Local)
-	di := NewDateIter(5, minDate, maxDate, today)
+	di := NewDateIter(5, &minDate, &maxDate, today)
 
 	di.Next()
 
@@ -24,7 +24,7 @@ func TestDateIterMaxWknd(t *testing.T) {
 	minDate := time.Date(2025, 1, 2, 14, 0, 0, 0, time.Local)
 	maxDate := time.Date(2025, 1, 3, 14, 0, 0, 0, time.Local)
 	today := time.Date(2025, 1, 13, 6, 0, 0, 0, time.Local)
-	di := NewDateIter(5, minDate, maxDate, today)
+	di := NewDateIter(5, &minDate, &maxDate, today)
 
 	di.Next()
 
@@ -37,7 +37,7 @@ func TestDateIterMax2(t *testing.T) {
 	minDate := time.Date(2025, 1, 2, 14, 0, 0, 0, time.Local)
 	maxDate := time.Date(2025, 1, 3, 14, 0, 0, 0, time.Local)
 	today := time.Date(2025, 1, 13, 6, 0, 0, 0, time.Local)
-	di := NewDateIter(5, minDate, maxDate, today)
+	di := NewDateIter(5, &minDate, &maxDate, today)
 
 	di.Next()
 	di.Next()
@@ -51,8 +51,21 @@ func TestDateIterMaxPast(t *testing.T) {
 	minDate := time.Date(2025, 1, 2, 14, 0, 0, 0, time.Local)
 	maxDate := time.Date(2025, 1, 10, 14, 0, 0, 0, time.Local)
 	today := time.Date(2025, 1, 13, 6, 0, 0, 0, time.Local)
-	di := NewDateIter(5, minDate, maxDate, today)
+	di := NewDateIter(5, &minDate, &maxDate, today)
 
 	new := di.Next()
 	assert.Equal(t, new, false)
+}
+
+func TestDateIterNil(t *testing.T) {
+	var minDate *time.Time = nil
+	var maxDate *time.Time = nil
+	today := time.Date(2025, 1, 13, 6, 0, 0, 0, time.Local)
+	di := NewDateIter(5, minDate, maxDate, today)
+
+	di.Next()
+
+	expected := time.Date(2025, 1, 10, 0, 0, 0, 0, time.Local)
+	actual := di.Date
+	assert.Equal(t, actual, expected)
 }
