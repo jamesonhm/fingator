@@ -48,7 +48,7 @@ func TestDateIterMax2(t *testing.T) {
 }
 
 func TestDateIterMaxPast(t *testing.T) {
-	minDate := time.Date(2025, 1, 9, 14, 0, 0, 0, time.Local)
+	minDate := time.Date(2025, 1, 2, 14, 0, 0, 0, time.Local)
 	maxDate := time.Date(2025, 1, 10, 14, 0, 0, 0, time.Local)
 	today := time.Date(2025, 1, 13, 6, 0, 0, 0, time.Local)
 	di := NewDateIter(5, minDate, maxDate, today)

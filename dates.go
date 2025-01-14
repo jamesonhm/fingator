@@ -1,19 +1,21 @@
 package main
 
-import "time"
+import (
+	"math"
+	"time"
+)
 
 type DateIter struct {
 	Date    time.Time
-	days    time.Duration
+	days    int
 	minDate time.Time
 	maxDate time.Time
 	today   time.Time
 }
 
-func NewDateIter(days int64, minDate, maxDate, today time.Time) *DateIter {
-	dur := time.Duration(int64(time.Hour) * days * 24)
+func NewDateIter(days int, minDate, maxDate, today time.Time) *DateIter {
 	return &DateIter{
-		days:    dur,
+		days:    days,
 		minDate: minDate,
 		maxDate: maxDate,
 		today:   midnight(today),
@@ -50,7 +52,7 @@ func (i *DateIter) nextMax() bool {
 
 func (i *DateIter) nextMin() bool {
 	var next time.Time
-	if i.maxDate.Sub(i.minDate) > i.days {
+	if weekdaysBetween(i.minDate, i.maxDate) > i.days {
 		return false
 	}
 	if i.minDate.Weekday() == 1 {
@@ -68,8 +70,13 @@ func midnight(d time.Time) time.Time {
 }
 
 func weekdaysBetween(start, end time.Time) int {
-	offset := -int(start.Weekday())
+	offset := int(end.Weekday()) - int(start.Weekday())
+	if end.Weekday() == time.Sunday {
+		offset++
+	}
 	start = start.AddDate(0, 0, -int(start.Weekday()))
-
-	offset += int(end.Weekday())
+	end = end.AddDate(0, 0, -int(end.Weekday()))
+	diff := end.Sub(start).Truncate(time.Hour * 24)
+	weeks := float64((diff.Hours() / 24) / 7)
+	return int(math.Round(weeks)*5) + offset
 }
