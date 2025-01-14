@@ -143,9 +143,18 @@ func runPolyGrouped(ctx context.Context, dbq *database.Queries, getenv func(stri
 		fmt.Fprintf(stderr, "Error getting latest timestamp: %v\n", err)
 	}
 	fmt.Fprintf(stdout, "start: %v, end: %v\n", startEnd.Min, startEnd.Max)
-	minDate := startEnd.Min.(time.Time)
-	maxDate := startEnd.Max.(time.Time)
-	di := NewDateIter(5, &minDate, &maxDate, time.Now())
+	var minDate, maxDate *time.Time
+	if start, ok := startEnd.Min.(time.Time); !ok {
+		minDate = nil
+	} else {
+		minDate = &start
+	}
+	if end, ok := startEnd.Max.(time.Time); !ok {
+		maxDate = nil
+	} else {
+		maxDate = &end
+	}
+	di := NewDateIter(5, minDate, maxDate, time.Now())
 	for di.Next() {
 		fmt.Fprintf(stdout, "next date: %v\n", di.Date)
 		params := &models.GroupedDailyParams{

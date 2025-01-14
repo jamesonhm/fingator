@@ -39,7 +39,7 @@ func (i *DateIter) nextMax() bool {
 		i.Date = midnight(next)
 		return true
 	}
-	if i.today.Sub(*i.maxDate) < time.Hour*24 {
+	if i.today.Sub(*i.maxDate) <= time.Hour*24 {
 		return false
 	}
 	next = nextWeekday(*i.maxDate)
