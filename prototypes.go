@@ -136,8 +136,7 @@ func runEdgarCompanyFilings(ctx context.Context, getenv func(string) string, std
 	}
 }
 
-func runPolyGrouped(ctx context.Context, dbq *database.Queries, getenv func(string) string, stdout, stderr io.Writer) {
-	polyClient := polygon.New(getenv("POLYGON_API_KEY"), time.Second*10, 0.083)
+func runPolyGrouped(ctx context.Context, dbq *database.Queries, polyClient polygon.Client, stdout, stderr io.Writer) {
 	startEnd, err := dbq.OHLCStartEnd(ctx)
 	if err != nil {
 		fmt.Fprintf(stderr, "Error getting latest timestamp: %v\n", err)

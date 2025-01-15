@@ -7,8 +7,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/jamesonhm/fingator/internal/database"
+	"github.com/jamesonhm/fingator/internal/polygon"
+	edgar "github.com/jamesonhm/fingator/internal/sec"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -26,12 +29,18 @@ func run(ctx context.Context, getenv func(string) string, stdout, stderr io.Writ
 	//serveport := getenv("PORT")
 	//fmt.Fprintf(stdout, "env variables - dburl: %s, serveport: %s\n", dburl, serveport)
 
-	runPolyGrouped(ctx, dbq, getenv, stdout, stderr)
+	polyClient := polygon.New(getenv("POLYGON_API_KEY"), time.Second*10, 0.083)
+	runPolyGrouped(ctx, dbq, polyClient, stdout, stderr)
+
+	agentName := getenv("EDGAR_COMPANY_NAME")
+	agentEmail := getenv("EDGAR_COMPANY_EMAIL")
+	edgarClient := edgar.New(agentName, agentEmail, time.Second*10, 10)
+
 	//runEdgarFacts(ctx, getenv, stdout, stderr)
 	//runEdgarFilings(ctx, getenv, stdout, stderr)
 	//fmt.Fprintf(stdout, "==============================================\n")
 	//runEdgarCompanyFilings(ctx, getenv, stdout, stderr)
-	//runEdgarTickers(ctx, getenv, stdout, stderr)
+	runEdgarTickers(ctx, edgarClient, stdout, stderr)
 	return nil
 }
 
