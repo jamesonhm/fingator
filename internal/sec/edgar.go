@@ -120,9 +120,7 @@ func (c *Client) GetCompanyTickers(ctx context.Context) ([]models.Company, error
 			Ticker:   ticker,
 			Exchange: exch,
 		}
-		if company.Exchange != "" {
-			companies = append(companies, company)
-		}
+		companies = append(companies, company)
 	}
 	return companies, nil
 }

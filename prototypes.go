@@ -15,41 +15,43 @@ import (
 	emodels "github.com/jamesonhm/fingator/internal/sec/models"
 )
 
-func runEdgarTickers(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) {
-	agentName := getenv("EDGAR_COMPANY_NAME")
-	agentEmail := getenv("EDGAR_COMPANY_EMAIL")
-	edgarClient := edgar.New(agentName, agentEmail, time.Second*10, 10)
-
+func runEdgarTickers(ctx context.Context, dbq *database.Queries, edgarClient edgar.Client, stdout, stderr io.Writer) {
 	companies, err := edgarClient.GetCompanyTickers(ctx)
 	if err != nil {
 		fmt.Fprintf(stderr, "Error getting companies\n")
 	}
-
 	fmt.Fprintf(stdout, "no. of companies: %d\n", len(companies))
+
+	for _, comp := range companies {
+		_, err := dbq.CreateCompany(ctx, database.CreateCompanyParams{
+			Cik:      int32(comp.CIK),
+			Name:     comp.Name,
+			Ticker:   comp.Ticker,
+			Exchange: comp.Exchange,
+		})
+		if err != nil {
+			fmt.Fprintf(stderr, "error adding company %+v: %v\n", comp, err)
+		}
+	}
 }
 
-func runEdgarFacts(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) {
-	agentName := getenv("EDGAR_COMPANY_NAME")
-	agentEmail := getenv("EDGAR_COMPANY_EMAIL")
-	edgarClient := edgar.New(agentName, agentEmail, time.Second*10, 10)
-
-	comps, err := edgarClient.GetCompanyTickers(ctx)
+func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar.Client, stdout, stderr io.Writer) {
+	ciks, err := dbq.GetExchangeCiks(ctx)
 	if err != nil {
-		fmt.Fprintf(stderr, "Error getting company tickers\n")
+		fmt.Fprintf(stderr, "Error getting company ciks: %v\n", err)
+		return
 	}
-
-	for i, comp := range comps {
+	// TODO: handle case where no cik's are returned (initial startup?)
+	for i, cik := range ciks {
 		if i >= 5 {
 			break
 		}
-
-		fmt.Fprintf(stdout, "comp: %s, ticker: %s, CIK: %d\n", comp.Name, comp.Ticker, comp.CIK)
 		params := &emodels.CompanyFactsParams{
-			CIK: comp.CIK,
+			CIK: emodels.NumericCIK(cik),
 		}
 		res, err := edgarClient.GetCompanyFacts(ctx, params)
 		if err != nil {
-			fmt.Fprintf(stderr, "Error getting company facts\n")
+			fmt.Fprintf(stderr, "Error getting company facts: %v\n", err)
 		}
 
 		dcf := &emodels.DCFData{}

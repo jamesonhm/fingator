@@ -8,6 +8,13 @@ import (
 	"time"
 )
 
+type Company struct {
+	Cik      int32
+	Name     string
+	Ticker   string
+	Exchange string
+}
+
 type Ohlc struct {
 	Ticker string
 	Ts     time.Time

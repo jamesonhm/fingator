@@ -40,7 +40,7 @@ func run(ctx context.Context, getenv func(string) string, stdout, stderr io.Writ
 	//runEdgarFilings(ctx, getenv, stdout, stderr)
 	//fmt.Fprintf(stdout, "==============================================\n")
 	//runEdgarCompanyFilings(ctx, getenv, stdout, stderr)
-	runEdgarTickers(ctx, edgarClient, stdout, stderr)
+	runEdgarTickers(ctx, dbq, edgarClient, stdout, stderr)
 	return nil
 }
 

@@ -1,4 +1,4 @@
--- name: CreateCompnay :one
+-- name: CreateCompany :one
 INSERT INTO companies (cik, name, ticker, exchange)
 VALUES (
     $1,
@@ -6,7 +6,13 @@ VALUES (
     $3,
     $4
     )
-ON CONFLICT  DO UPDATE SET 
-
+ON CONFLICT ON CONSTRAINT companies_pkey DO UPDATE SET 
+    name = EXCLUDED.name,
+    ticker = EXCLUDED.ticker,
+    exchange = EXCLUDED.exchange
 RETURNING *;
 
+-- name: GetExchangeCiks :many
+SELECT cik
+FROM companies
+WHERE exchange != '';
