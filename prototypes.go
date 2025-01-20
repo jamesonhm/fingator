@@ -41,7 +41,11 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar
 		fmt.Fprintf(stderr, "Error getting company ciks: %v\n", err)
 		return
 	}
-	// TODO: handle case where no cik's are returned (initial startup?)
+	if len(ciks) == 0 {
+		fmt.Fprintf(stderr, "Error, no CIK's found\n")
+		return
+	}
+
 	for i, cik := range ciks {
 		if i >= 5 {
 			break
@@ -58,9 +62,17 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar
 		facts := edgar.FilterDCF(res, dcf)
 		for _, fact := range facts {
 			if len(fact.Units.USD) > 0 {
-				fmt.Printf("Category: %s, Tag: %s, Label: %s, recent: %+v\n", fact.Category, fact.Tag, fact.Label, fact.Units.USD[len(fact.Units.USD)-1])
+				fmt.Fprintf(
+					stdout,
+					"cik: %d, Category: %s, Tag: %s, Label: %s, units: %s, recent: %+v\n",
+					cik, fact.Category, fact.Tag, fact.Label, "USD", fact.Units.USD[len(fact.Units.USD)-1],
+				)
 			} else if len(fact.Units.Pure) > 0 {
-				fmt.Printf("Category: %s, Tag: %s, Label: %s, recent: %+v\n", fact.Category, fact.Tag, fact.Label, fact.Units.Pure[len(fact.Units.Pure)-1])
+				fmt.Fprintf(
+					stdout,
+					"cik: %d, Category: %s, Tag: %s, Label: %s, units: %s, recent: %+v\n",
+					cik, fact.Category, fact.Tag, fact.Label, "PURE", fact.Units.Pure[len(fact.Units.Pure)-1],
+				)
 			}
 			fmt.Println()
 		}

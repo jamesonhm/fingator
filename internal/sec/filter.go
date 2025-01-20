@@ -16,15 +16,15 @@ func FilterDCF(cf *models.CompanyFactsResponse, d *models.DCFData) []*models.Fil
 		//"Inventory":          {"IncreaseDecreaseInInventories", "InventoryNet"},
 		//"AccountsPayable":    {"IncreaseDecreaseInAccountsPayable", "AccountsPayableCurrent"},
 		//"OperatingExpense":   {"OperatingExpenses"},
-		"CapEx":           {"PaymentsToAcquirePropertyPlantAndEquipment", "CapitalExpenditures"},
+		"CapEx":           {"PaymentsToAcquirePropertyPlantAndEquipment", "CapitalExpenditures", "PaymentsToAcquireProductiveAssets"},
 		"InterestPaid":    {"InterestPaid", "InterestPaidNet", "InterestPaidCapitalized"},
-		"DebtRepayment":   {"RepaymentsOfDebtAndCapitalLeaseObligations", "RepaymentsOfDebt", "RepaymentsOfLongTermDebt"},
-		"DebtIssuance":    {"ProceedsFromIssuanceOfDebt", "ProceedsFromIssuanceOfLongTermDebt"},
+		"DebtRepayment":   {"RepaymentsOfDebtAndCapitalLeaseObligations", "RepaymentsOfDebt", "RepaymentsOfConvertibleDebt", "RepaymentsOfLongTermDebt"},
+		"DebtIssuance":    {"ProceedsFromIssuanceOfDebt", "ProceedsFromIssuanceOfLongTermDebt", "ProceedsFromConvertibleDebt"},
 		"EquityValue":     {"StockholdersEquity", "MarketCapitalization"},
 		"DebtValue":       {"LongTermDebt", "DebtCurrent"},
 		"InterestExpense": {"InterestExpense", "InterestExpenseDebt"},
 		"TaxRate":         {"EffectiveIncomeTaxRateContinuingOperations", "IncomeTaxExpenseBenefit"},
-		"MadeUpCategory":  {"MadeUpTag"},
+		//"MadeUpCategory":  {"MadeUpTag"},
 	}
 
 	var filteredFacts []*models.FilteredFact

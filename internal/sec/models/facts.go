@@ -18,8 +18,9 @@ type CompanyFactsResponse struct {
 }
 
 type FactData struct {
-	Label string   `json:"label"`
-	Units UnitData `json:"units"`
+	Label       string   `json:"label"`
+	Description string   `json:"description"`
+	Units       UnitData `json:"units"`
 }
 
 type UnitData struct {
