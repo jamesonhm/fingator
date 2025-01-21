@@ -7,7 +7,7 @@ CREATE TABLE facts (
     description TEXT NOT NULL,
     units TEXT NOT NULL,
     end_d DATE NOT NULL,
-    value BIGINT NOT NULL,
+    value NUMERIC NOT NULL,
     fiscal_year INTEGER NOT NULL,
     fiscal_period TEXT NOT NULL,
     form TEXT NOT NULL,

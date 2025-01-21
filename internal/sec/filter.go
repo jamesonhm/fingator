@@ -6,20 +6,36 @@ import (
 	"github.com/jamesonhm/fingator/internal/sec/models"
 )
 
-func FilterDCF(cf *models.CompanyFactsResponse, d *models.DCFData) []*models.FilteredFact {
+func FilterDCF(cf *models.CompanyFactsResponse) []*models.FilteredFact {
 
 	var XBRLTags = map[string][]string{
-		"CashFlow": {"NetCashProvidedByUsedInOperatingActivities"},
+		"CashFlow": {
+			"NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
+			"NetCashProvidedByUsedInOperatingActivities",
+		},
 		//"NetIncome":          {"NetIncomeLoss", "NetIncomeLossAvailableToCommonStockholdersBasic", "ProfitLoss"},
 		//"NonCashExpense":     {"DepreciationAndAmortization", "DepreciationDepletionAndAmortization"},
 		//"AccountsReceivable": {"IncreaseDecreaseInAccountsReceivable", "AccountsReceivableNetCurrent"},
 		//"Inventory":          {"IncreaseDecreaseInInventories", "InventoryNet"},
 		//"AccountsPayable":    {"IncreaseDecreaseInAccountsPayable", "AccountsPayableCurrent"},
 		//"OperatingExpense":   {"OperatingExpenses"},
-		"CapEx":           {"PaymentsToAcquirePropertyPlantAndEquipment", "CapitalExpenditures", "PaymentsToAcquireProductiveAssets"},
-		"InterestPaid":    {"InterestPaid", "InterestPaidNet", "InterestPaidCapitalized"},
-		"DebtRepayment":   {"RepaymentsOfDebtAndCapitalLeaseObligations", "RepaymentsOfDebt", "RepaymentsOfConvertibleDebt", "RepaymentsOfLongTermDebt"},
-		"DebtIssuance":    {"ProceedsFromIssuanceOfDebt", "ProceedsFromIssuanceOfLongTermDebt", "ProceedsFromConvertibleDebt"},
+		"CapEx": {
+			"PaymentsToAcquirePropertyPlantAndEquipment",
+			"CapitalExpenditures",
+			"PaymentsToAcquireProductiveAssets",
+		},
+		"InterestPaid": {"InterestPaid", "InterestPaidNet", "InterestPaidCapitalized"},
+		"DebtRepayment": {
+			"RepaymentsOfDebtAndCapitalLeaseObligations",
+			"RepaymentsOfDebt",
+			"RepaymentsOfConvertibleDebt",
+			"RepaymentsOfLongTermDebt",
+		},
+		"DebtIssuance": {
+			"ProceedsFromIssuanceOfDebt",
+			"ProceedsFromIssuanceOfLongTermDebt",
+			"ProceedsFromConvertibleDebt",
+		},
 		"EquityValue":     {"StockholdersEquity", "MarketCapitalization"},
 		"DebtValue":       {"LongTermDebt", "DebtCurrent"},
 		"InterestExpense": {"InterestExpense", "InterestExpenseDebt"},
@@ -31,7 +47,7 @@ func FilterDCF(cf *models.CompanyFactsResponse, d *models.DCFData) []*models.Fil
 	for key, tags := range XBRLTags {
 		factData, err := findFact(cf.Facts.USGAAP, key, tags)
 		if err != nil {
-			fmt.Printf("%v\n", err)
+			fmt.Printf("%v, cik: %d\n", err, cf.CIK)
 			continue
 		}
 		filteredFacts = append(filteredFacts, factData)

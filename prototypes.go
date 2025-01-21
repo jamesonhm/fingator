@@ -58,27 +58,60 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar
 			fmt.Fprintf(stderr, "Error getting company facts: %v\n", err)
 		}
 
-		dcf := &emodels.DCFData{}
-		facts := edgar.FilterDCF(res, dcf)
+		//dcf := &emodels.DCFData{}
+		facts := edgar.FilterDCF(res)
 		for _, fact := range facts {
 			if len(fact.Units.USD) > 0 {
-				fmt.Fprintf(
-					stdout,
-					"cik: %d, Category: %s, Tag: %s, Label: %s, units: %s, recent: %+v\n",
-					cik, fact.Category, fact.Tag, fact.Label, "USD", fact.Units.USD[len(fact.Units.USD)-1],
-				)
+				for _, entry := range fact.Units.USD {
+					dbq.CreateFact(ctx, database.CreateFactParams{
+						Cik:          cik,
+						Category:     fact.Category,
+						Tag:          fact.Tag,
+						Label:        fact.Label,
+						Description:  fact.Description,
+						Units:        "USD",
+						EndD:         time.Time(entry.End),
+						Value:        entry.Value.String(),
+						FiscalYear:   int32(entry.FiscalYear),
+						FiscalPeriod: entry.FiscalPeriod,
+						Form:         entry.Form,
+					})
+				}
 			} else if len(fact.Units.Pure) > 0 {
-				fmt.Fprintf(
-					stdout,
-					"cik: %d, Category: %s, Tag: %s, Label: %s, units: %s, recent: %+v\n",
-					cik, fact.Category, fact.Tag, fact.Label, "PURE", fact.Units.Pure[len(fact.Units.Pure)-1],
-				)
+				for _, entry := range fact.Units.Pure {
+					dbq.CreateFact(ctx, database.CreateFactParams{
+						Cik:          cik,
+						Category:     fact.Category,
+						Tag:          fact.Tag,
+						Label:        fact.Label,
+						Description:  fact.Description,
+						Units:        "PURE",
+						EndD:         time.Time(entry.End),
+						Value:        entry.Value.String(),
+						FiscalYear:   int32(entry.FiscalYear),
+						FiscalPeriod: entry.FiscalPeriod,
+						Form:         entry.Form,
+					})
+				}
+			} else if len(fact.Units.Shares) > 0 {
+				for _, entry := range fact.Units.Shares {
+					dbq.CreateFact(ctx, database.CreateFactParams{
+						Cik:          cik,
+						Category:     fact.Category,
+						Tag:          fact.Tag,
+						Label:        fact.Label,
+						Description:  fact.Description,
+						Units:        "SHARES",
+						EndD:         time.Time(entry.End),
+						Value:        entry.Value.String(),
+						FiscalYear:   int32(entry.FiscalYear),
+						FiscalPeriod: entry.FiscalPeriod,
+						Form:         entry.Form,
+					})
+				}
 			}
-			fmt.Println()
 		}
 	}
-
-	//fmt.Fprintf(stdout, "%+v\n", dcf)
 }
 
 func runEdgarFilings(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) {

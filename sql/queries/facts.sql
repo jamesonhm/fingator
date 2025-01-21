@@ -1,4 +1,4 @@
--- name: CreateFact :one
+-- name: CreateFact :exec
 INSERT INTO facts (cik, category, tag, label, description, units, end_d, value, fiscal_year, fiscal_period, form)
 VALUES (
     $1,
@@ -13,5 +13,4 @@ VALUES (
     $10,
     $11
     )
-ON CONFLICT ON CONSTRAINT facts_pkey DO NOTHING
-RETURNING *;
+ON CONFLICT ON CONSTRAINT facts_pkey DO NOTHING;

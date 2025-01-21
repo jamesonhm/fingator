@@ -15,6 +15,20 @@ type Company struct {
 	Exchange string
 }
 
+type Fact struct {
+	Cik          int32
+	Category     string
+	Tag          string
+	Label        string
+	Description  string
+	Units        string
+	EndD         time.Time
+	Value        string
+	FiscalYear   int32
+	FiscalPeriod string
+	Form         string
+}
+
 type Ohlc struct {
 	Ticker string
 	Ts     time.Time
