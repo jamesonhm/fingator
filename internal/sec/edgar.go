@@ -17,7 +17,7 @@ import (
 
 const (
 	CompanyTickerCIKPath = "https://www.sec.gov/files/company_tickers_exchange.json"
-	DataBaseURL          = "https://data.sec.gov"
+	BaseDataURL          = "https://data.sec.gov"
 	CompanyFactsPath     = "/api/xbrl/companyfacts/CIK{cik_padded}.json"
 	LatestFilingsPath    = "https://www.sec.gov/cgi-bin/browse-edgar"
 	MainURL              = "https://www.sec.gov"
@@ -36,7 +36,7 @@ func New(agentName, agentEmail string, timeout time.Duration, reqsPerSec rate.Li
 	return Client{
 		agentName:  agentName,
 		agentEmail: agentEmail,
-		baseurl:    DataBaseURL,
+		baseurl:    BaseDataURL,
 		httpC: http.Client{
 			Timeout: timeout,
 		},
@@ -127,7 +127,7 @@ func (c *Client) GetCompanyTickers(ctx context.Context) ([]models.Company, error
 
 func (c *Client) GetCompanyFacts(ctx context.Context, params *models.CompanyFactsParams) (*models.CompanyFactsResponse, error) {
 	res := &models.CompanyFactsResponse{}
-	err := c.Call(ctx, DataBaseURL, CompanyFactsPath, params, res, encdec.DecodeJsonResp)
+	err := c.Call(ctx, BaseDataURL, CompanyFactsPath, params, res, encdec.DecodeJsonResp)
 	return res, err
 }
 

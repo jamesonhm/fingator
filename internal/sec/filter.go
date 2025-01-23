@@ -13,12 +13,20 @@ func FilterDCF(cf *models.CompanyFactsResponse) []*models.FilteredFact {
 			"NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
 			"NetCashProvidedByUsedInOperatingActivities",
 		},
-		//"NetIncome":          {"NetIncomeLoss", "NetIncomeLossAvailableToCommonStockholdersBasic", "ProfitLoss"},
+		"NetIncome": {"NetIncomeLoss", "NetIncomeLossAvailableToCommonStockholdersBasic", "ProfitLoss"},
 		//"NonCashExpense":     {"DepreciationAndAmortization", "DepreciationDepletionAndAmortization"},
 		//"AccountsReceivable": {"IncreaseDecreaseInAccountsReceivable", "AccountsReceivableNetCurrent"},
 		//"Inventory":          {"IncreaseDecreaseInInventories", "InventoryNet"},
 		//"AccountsPayable":    {"IncreaseDecreaseInAccountsPayable", "AccountsPayableCurrent"},
 		//"OperatingExpense":   {"OperatingExpenses"},
+		"Revenue": {
+			"Revenues",
+			"RevenueFromContractWithCustomerExcludingAssessedTax",
+			"SalesRevenueGoodsNet",
+			"SalesRevenueServicesNet",
+			"SalesRevenueEnergyServices",
+			"OperatingLeasesIncomeStatementLeaseRevenue",
+			"SalesTypeLeaseRevenue"},
 		"CapEx": {
 			"PaymentsToAcquirePropertyPlantAndEquipment",
 			"CapitalExpenditures",
@@ -40,6 +48,7 @@ func FilterDCF(cf *models.CompanyFactsResponse) []*models.FilteredFact {
 		"DebtValue":       {"LongTermDebt", "DebtCurrent"},
 		"InterestExpense": {"InterestExpense", "InterestExpenseDebt"},
 		"TaxRate":         {"EffectiveIncomeTaxRateContinuingOperations", "IncomeTaxExpenseBenefit"},
+		"Shares":          {"WeightedAverageNumberOfDilutedSharesOutstanding"},
 		//"MadeUpCategory":  {"MadeUpTag"},
 	}
 

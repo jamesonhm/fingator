@@ -36,16 +36,17 @@ func runEdgarTickers(ctx context.Context, dbq *database.Queries, edgarClient edg
 }
 
 func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar.Client, stdout, stderr io.Writer) {
-	ciks, err := dbq.GetExchangeCiks(ctx)
-	if err != nil {
-		fmt.Fprintf(stderr, "Error getting company ciks: %v\n", err)
-		return
-	}
-	if len(ciks) == 0 {
-		fmt.Fprintf(stderr, "Error, no CIK's found\n")
-		return
-	}
+	//ciks, err := dbq.GetExchangeCiks(ctx)
+	//if err != nil {
+	//	fmt.Fprintf(stderr, "Error getting company ciks: %v\n", err)
+	//	return
+	//}
+	//if len(ciks) == 0 {
+	//	fmt.Fprintf(stderr, "Error, no CIK's found\n")
+	//	return
+	//}
 
+	ciks := []int32{320193, 789019, 1868275}
 	for i, cik := range ciks {
 		if i >= 5 {
 			break
@@ -55,60 +56,42 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar
 		}
 		res, err := edgarClient.GetCompanyFacts(ctx, params)
 		if err != nil {
-			fmt.Fprintf(stderr, "Error getting company facts: %v\n", err)
+			fmt.Fprintf(stderr, "Error getting company facts for cik %d: %v\n", cik, err)
 		}
 
-		//dcf := &emodels.DCFData{}
 		facts := edgar.FilterDCF(res)
 		for _, fact := range facts {
+			const numFP = 40
+			var entries []emodels.UnitEntry
+			var units string
+			var l int
 			if len(fact.Units.USD) > 0 {
-				for _, entry := range fact.Units.USD {
-					dbq.CreateFact(ctx, database.CreateFactParams{
-						Cik:          cik,
-						Category:     fact.Category,
-						Tag:          fact.Tag,
-						Label:        fact.Label,
-						Description:  fact.Description,
-						Units:        "USD",
-						EndD:         time.Time(entry.End),
-						Value:        entry.Value.String(),
-						FiscalYear:   int32(entry.FiscalYear),
-						FiscalPeriod: entry.FiscalPeriod,
-						Form:         entry.Form,
-					})
-				}
+				l = len(fact.Units.USD)
+				entries = fact.Units.USD
+				units = "USD"
 			} else if len(fact.Units.Pure) > 0 {
-				for _, entry := range fact.Units.Pure {
-					dbq.CreateFact(ctx, database.CreateFactParams{
-						Cik:          cik,
-						Category:     fact.Category,
-						Tag:          fact.Tag,
-						Label:        fact.Label,
-						Description:  fact.Description,
-						Units:        "PURE",
-						EndD:         time.Time(entry.End),
-						Value:        entry.Value.String(),
-						FiscalYear:   int32(entry.FiscalYear),
-						FiscalPeriod: entry.FiscalPeriod,
-						Form:         entry.Form,
-					})
-				}
+				l = len(fact.Units.Pure)
+				entries = fact.Units.Pure
+				units = "PURE"
 			} else if len(fact.Units.Shares) > 0 {
-				for _, entry := range fact.Units.Shares {
-					dbq.CreateFact(ctx, database.CreateFactParams{
-						Cik:          cik,
-						Category:     fact.Category,
-						Tag:          fact.Tag,
-						Label:        fact.Label,
-						Description:  fact.Description,
-						Units:        "SHARES",
-						EndD:         time.Time(entry.End),
-						Value:        entry.Value.String(),
-						FiscalYear:   int32(entry.FiscalYear),
-						FiscalPeriod: entry.FiscalPeriod,
-						Form:         entry.Form,
-					})
-				}
+				l = len(fact.Units.Shares)
+				entries = fact.Units.Shares
+				units = "SHARES"
+			}
+			for _, entry := range entries[l-min(l, numFP):] {
+				dbq.CreateFact(ctx, database.CreateFactParams{
+					Cik:          cik,
+					Category:     fact.Category,
+					Tag:          fact.Tag,
+					Label:        fact.Label,
+					Description:  fact.Description,
+					Units:        units,
+					EndD:         time.Time(entry.End),
+					Value:        entry.Value.String(),
+					FiscalYear:   int32(entry.FiscalYear),
+					FiscalPeriod: entry.FiscalPeriod,
+					Form:         entry.Form,
+				})
 			}
 		}
 	}
