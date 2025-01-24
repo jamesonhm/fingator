@@ -13,6 +13,7 @@ func (n NumericCIK) Pad() string {
 	return fmt.Sprintf("%010d", n)
 }
 
+// Json Decoding Function
 type DecFunc func(r *http.Response, v any) error
 
 // Date is a short date without a time component of the format: "2006-01-02"
