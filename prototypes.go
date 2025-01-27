@@ -36,6 +36,7 @@ func runEdgarTickers(ctx context.Context, dbq *database.Queries, edgarClient edg
 }
 
 func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar.Client, stdout, stderr io.Writer) {
+	// TODO: Uncomment next 9 lines in prod
 	//ciks, err := dbq.GetExchangeCiks(ctx)
 	//if err != nil {
 	//	fmt.Fprintf(stderr, "Error getting company ciks: %v\n", err)
@@ -46,6 +47,7 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar
 	//	return
 	//}
 
+	// TODO: Comment next line in prod
 	ciks := []int32{320193, 789019, 1868275}
 	for i, cik := range ciks {
 		if i >= 5 {
