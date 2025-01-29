@@ -14,3 +14,13 @@ const (
 func (i IDType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(string(i))
 }
+
+type ExchangeCode string
+
+const (
+	ExchUS ExchangeCode = "US"
+)
+
+func (e ExchangeCode) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(e))
+}

@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/jamesonhm/fingator/internal/database"
+	"github.com/jamesonhm/fingator/internal/openfigi"
+	fmodels "github.com/jamesonhm/fingator/internal/openfigi/models"
 	"github.com/jamesonhm/fingator/internal/polygon"
 	"github.com/jamesonhm/fingator/internal/polygon/models"
 	edgar "github.com/jamesonhm/fingator/internal/sec"
@@ -215,4 +217,31 @@ func runPolyGrouped(ctx context.Context, dbq *database.Queries, polyClient polyg
 			}
 		}
 	}
+}
+
+func runOpenFigiCusips(ctx context.Context, figiClient openfigi.Client, stdout, stderr io.Writer) {
+	// CUSIPS: Abbvie, Alphabet Class C, Amazon
+	cusips := []string{"00287Y109", "02079K107", "023135106"}
+	params := []fmodels.MappingRequest{}
+	for _, c := range cusips {
+		params = append(params, fmodels.MappingRequest{
+			IDType:   fmodels.TypeCUSIP,
+			IDValue:  c,
+			ExchCode: fmodels.ExchUS,
+		})
+	}
+
+	fmt.Fprintf(stdout, "%+v\n", params)
+
+	res, err := figiClient.Mapping(ctx, params)
+	if err != nil {
+		fmt.Fprintf(stderr, "Error with mapping request: %v\n", err)
+	}
+
+	for _, obj := range *res {
+		for _, d := range obj.Data {
+			fmt.Fprintf(stdout, "%+v\n", d)
+		}
+	}
+
 }

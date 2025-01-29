@@ -1,8 +1,9 @@
 package models
 
 type MappingRequest struct {
-	IDType  IDType `json:"idType"`
-	IDValue string `json:"idValue"`
+	IDType   IDType       `json:"idType"`
+	IDValue  string       `json:"idValue"`
+	ExchCode ExchangeCode `json:"exchCode"`
 }
 
 type MappingResponse struct {
