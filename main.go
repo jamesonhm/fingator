@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
-	//"github.com/jamesonhm/fingator/internal/database"
+	"github.com/jamesonhm/fingator/internal/database"
 	"github.com/jamesonhm/fingator/internal/openfigi"
-	//"github.com/jamesonhm/fingator/internal/polygon"
+	"github.com/jamesonhm/fingator/internal/polygon"
 	//edgar "github.com/jamesonhm/fingator/internal/sec"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/joho/godotenv"
@@ -53,26 +55,32 @@ func Xrun(ctx context.Context, getenv func(string) string, stdout, stderr io.Wri
 	return nil
 }
 
-func main() {
-	ctx := context.Background()
-	godotenv.Load()
-	if err := run(ctx, os.Getenv, os.Stdout, os.Stderr); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		os.Exit(1)
-	}
-}
+//func main() {
+//	ctx := context.Background()
+//	godotenv.Load()
+//	if err := run(ctx, os.Getenv, os.Stdout, os.Stderr); err != nil {
+//		fmt.Fprintf(os.Stderr, "%s\n", err)
+//		os.Exit(1)
+//	}
+//}
 
-func run(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) error {
-	s, err := gocron.NewScheduler()
-	if err != nil {
-		return fmt.Errorf("Error creating scheduler: %v", err)
-	}
+// func run(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) error {
+func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	godotenv.Load()
+	dburl := mustEnv("DB_URL")
+	db := must(sql.Open("postgres", dburl))
+	defer db.Close()
+	dbq := database.New(db)
+
+	polyClient := polygon.New(mustEnv("POLYGON_API_KEY"), time.Second*10, 0.083)
+
+	s, _ := gocron.NewScheduler()
 	defer func() { _ = s.Shutdown() }()
 
-	j, err := s.NewJob(
-		gocron.DurationJob(
-			10*time.Second,
-		),
+	_, _ = s.NewJob(
+		gocron.DurationJob(10*time.Second),
 		gocron.NewTask(
 			func(ctx context.Context, a string, b int) {
 				fmt.Println("a:", a, "b:", b)
@@ -82,17 +90,47 @@ func run(ctx context.Context, getenv func(string) string, stdout, stderr io.Writ
 		),
 		gocron.WithContext(ctx),
 	)
+
+	polyGrouped, err := s.NewJob(
+		gocron.DailyJob(1, gocron.NewAtTimes(gocron.NewAtTime(5, 0, 0))),
+		//gocron.NewTask(runPolyGrouped(ctx, dbq, polyClient, os.Stdout, os.Stderr)),
+		gocron.NewTask(runPolyGrouped, ctx, dbq, polyClient, os.Stdout, os.Stderr),
+		gocron.WithContext(ctx),
+	)
 	if err != nil {
-		return fmt.Errorf("error creating job: %v", err)
+		fmt.Printf("error creating job: %v", err)
+		return
 	}
 
-	fmt.Println(j.ID())
-
+	fmt.Println(polyGrouped.ID())
 	s.Start()
 
-	select {
-	case <-time.After(time.Minute):
-	}
+	// Handle interrupt signals (ctrl-c) for graceful shutdown
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 
-	return nil
+	// Block until an interrupt signal is recieved
+	<-c
+
+	//select {
+	//case <-time.After(time.Minute):
+	//}
+	cancel()
+
+	fmt.Println("Main func exit...")
+}
+
+func mustEnv(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		panic(fmt.Sprintf("Env variable %s required", key))
+	}
+	return val
+}
+
+func must[T any](val T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+	return val
 }
