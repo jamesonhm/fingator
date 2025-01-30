@@ -13,13 +13,14 @@ import (
 	"github.com/jamesonhm/fingator/internal/openfigi"
 	//"github.com/jamesonhm/fingator/internal/polygon"
 	//edgar "github.com/jamesonhm/fingator/internal/sec"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
 // TODO: Explore the "Must" pattern for env variables and others
 
-func run(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) error {
+func Xrun(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) error {
 	dburl := getenv("DB_URL")
 	db, err := sql.Open("postgres", dburl)
 	if err != nil {
@@ -59,4 +60,39 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
+}
+
+func run(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) error {
+	s, err := gocron.NewScheduler()
+	if err != nil {
+		return fmt.Errorf("Error creating scheduler: %v", err)
+	}
+	defer func() { _ = s.Shutdown() }()
+
+	j, err := s.NewJob(
+		gocron.DurationJob(
+			10*time.Second,
+		),
+		gocron.NewTask(
+			func(ctx context.Context, a string, b int) {
+				fmt.Println("a:", a, "b:", b)
+			},
+			"hello",
+			1,
+		),
+		gocron.WithContext(ctx),
+	)
+	if err != nil {
+		return fmt.Errorf("error creating job: %v", err)
+	}
+
+	fmt.Println(j.ID())
+
+	s.Start()
+
+	select {
+	case <-time.After(time.Minute):
+	}
+
+	return nil
 }
