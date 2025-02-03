@@ -170,7 +170,14 @@ func runEdgarCompanyFilings(ctx context.Context, getenv func(string) string, std
 	}
 }
 
-func runPolyGrouped(ctx context.Context, dbq *database.Queries, polyClient polygon.Client, stdout, stderr io.Writer) {
+func runPolyGrouped(
+	ctx context.Context,
+	dbq *database.Queries,
+	polyClient polygon.Client,
+	days int,
+	stdout,
+	stderr io.Writer,
+) {
 	startEnd, err := dbq.OHLCStartEnd(ctx)
 	if err != nil {
 		fmt.Fprintf(stderr, "Error getting latest timestamp: %v\n", err)
@@ -187,7 +194,7 @@ func runPolyGrouped(ctx context.Context, dbq *database.Queries, polyClient polyg
 	} else {
 		maxDate = &end
 	}
-	di := NewDateIter(5, minDate, maxDate, time.Now())
+	di := NewDateIter(days, minDate, maxDate, time.Now())
 	for di.Next() {
 		fmt.Fprintf(stdout, "next date: %v\n", di.Date)
 		params := &models.GroupedDailyParams{
@@ -195,22 +202,23 @@ func runPolyGrouped(ctx context.Context, dbq *database.Queries, polyClient polyg
 		}
 		res, err := polyClient.GroupedDailyBars(ctx, params)
 		if err != nil {
-			fmt.Fprintf(stderr, "Error happened here\n")
+			fmt.Fprintf(stderr, "Prototype groupedDaily call: %v\n", err)
+			break
 		}
 		fmt.Fprintf(stdout, "result count: %d, status: %s\n", res.ResultCount, res.Status)
-		for i, group := range res.Results {
+		for i, tickerDay := range res.Results {
 			if i >= 5 {
 				break
 			}
-			fmt.Fprintf(stdout, " * %+v\n", group)
+			fmt.Fprintf(stdout, " * %+v\n", tickerDay)
 			_, err := dbq.CreateTickerTimestamp(ctx, database.CreateTickerTimestampParams{
-				Ticker: group.Ticker,
-				Ts:     time.Time(group.Timestamp),
-				Open:   strconv.FormatFloat(group.Open, 'f', 2, 64),
-				High:   strconv.FormatFloat(group.High, 'f', 2, 64),
-				Low:    strconv.FormatFloat(group.Low, 'f', 2, 64),
-				Close:  strconv.FormatFloat(group.Close, 'f', 2, 64),
-				Volume: strconv.FormatFloat(group.Volume, 'f', 2, 64),
+				Ticker: tickerDay.Ticker,
+				Ts:     time.Time(tickerDay.Timestamp),
+				Open:   strconv.FormatFloat(tickerDay.Open, 'f', 2, 64),
+				High:   strconv.FormatFloat(tickerDay.High, 'f', 2, 64),
+				Low:    strconv.FormatFloat(tickerDay.Low, 'f', 2, 64),
+				Close:  strconv.FormatFloat(tickerDay.Close, 'f', 2, 64),
+				Volume: strconv.FormatFloat(tickerDay.Volume, 'f', 2, 64),
 			})
 			if err != nil {
 				fmt.Fprintf(stderr, "Error adding ticker/timestamp to db: %v\n", err)

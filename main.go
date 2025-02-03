@@ -14,6 +14,8 @@ import (
 	"github.com/jamesonhm/fingator/internal/database"
 	"github.com/jamesonhm/fingator/internal/openfigi"
 	"github.com/jamesonhm/fingator/internal/polygon"
+	//"github.com/jamesonhm/fingator/internal/rate"
+
 	//edgar "github.com/jamesonhm/fingator/internal/sec"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/joho/godotenv"
@@ -68,37 +70,44 @@ func Xrun(ctx context.Context, getenv func(string) string, stdout, stderr io.Wri
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 
+	// Env Variable Load
 	godotenv.Load()
 	dburl := mustEnv("DB_URL")
 	db := must(sql.Open("postgres", dburl))
 	defer db.Close()
 	dbq := database.New(db)
 
-	polyClient := polygon.New(mustEnv("POLYGON_API_KEY"), time.Second*10, 0.083)
+	// API Clients
+	polyClient := polygon.New(mustEnv("POLYGON_API_KEY"), time.Second*10, time.Minute, 5)
 
+	// Scheduler and Tasks
 	s, _ := gocron.NewScheduler()
 	defer func() { _ = s.Shutdown() }()
 
-	_, _ = s.NewJob(
-		gocron.DurationJob(10*time.Second),
-		gocron.NewTask(
-			func(ctx context.Context, a string, b int) {
-				fmt.Println("a:", a, "b:", b)
-			},
-			"hello",
-			1,
-		),
-		gocron.WithContext(ctx),
-	)
+	//rl := rate.New(time.Second, 2)
+	//_, _ = s.NewJob(
+	//	gocron.DurationJob(10*time.Second),
+	//	gocron.NewTask(
+	//		func(ctx context.Context, a string, b int) {
+	//			for i := range b {
+	//				<-rl.Throttle
+	//				fmt.Println(time.Now(), "a:", a, "b:", i)
+	//			}
+	//		},
+	//		"hello",
+	//		8,
+	//	),
+	//	gocron.WithContext(ctx),
+	//)
 
 	polyGrouped, err := s.NewJob(
 		gocron.DailyJob(1, gocron.NewAtTimes(gocron.NewAtTime(5, 0, 0))),
-		//gocron.NewTask(runPolyGrouped(ctx, dbq, polyClient, os.Stdout, os.Stderr)),
-		gocron.NewTask(runPolyGrouped, ctx, dbq, polyClient, os.Stdout, os.Stderr),
+		gocron.NewTask(runPolyGrouped, ctx, dbq, polyClient, 7, os.Stdout, os.Stderr),
 		gocron.WithContext(ctx),
+		gocron.WithStartAt(gocron.WithStartImmediately()),
 	)
 	if err != nil {
-		fmt.Printf("error creating job: %v", err)
+		fmt.Printf("error creating job: %v\n", err)
 		return
 	}
 
@@ -107,17 +116,13 @@ func main() {
 
 	// Handle interrupt signals (ctrl-c) for graceful shutdown
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	// Block until an interrupt signal is recieved
 	<-c
-
-	//select {
-	//case <-time.After(time.Minute):
-	//}
+	fmt.Println("\nMain func exit...")
 	cancel()
 
-	fmt.Println("Main func exit...")
 }
 
 func mustEnv(key string) string {

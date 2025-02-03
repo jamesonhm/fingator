@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jamesonhm/fingator/internal/rate"
 	"github.com/jamesonhm/fingator/internal/uri"
-	"golang.org/x/time/rate"
 )
 
 const (
@@ -23,7 +23,7 @@ type Client struct {
 	limiter    *rate.Limiter
 }
 
-func New(apiKey string, timeout time.Duration, reqsPerSec rate.Limit) Client {
+func New(apiKey string, timeout time.Duration, period time.Duration, count int) Client {
 	return Client{
 		baseurl: APIURL,
 		apiKey:  apiKey,
@@ -31,7 +31,7 @@ func New(apiKey string, timeout time.Duration, reqsPerSec rate.Limit) Client {
 			Timeout: timeout,
 		},
 		uriBuilder: uri.New(),
-		limiter:    rate.NewLimiter(reqsPerSec, 1),
+		limiter:    rate.New(period, count),
 	}
 }
 
@@ -46,7 +46,10 @@ func (c *Client) Call(ctx context.Context, path string, params, response any) er
 }
 
 func (c *Client) CallURL(ctx context.Context, uri string, response any) error {
-	c.limiter.Wait(ctx)
+	err := c.limiter.Wait(ctx)
+	if err != nil {
+		return err
+	}
 	uri = APIURL + uri
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
 	if err != nil {
