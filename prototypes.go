@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"strconv"
 	"time"
 
@@ -175,14 +176,19 @@ func runPolyGrouped(
 	dbq *database.Queries,
 	polyClient polygon.Client,
 	days int,
-	stdout,
-	stderr io.Writer,
+	logger *slog.Logger,
 ) {
 	startEnd, err := dbq.OHLCStartEnd(ctx)
 	if err != nil {
-		fmt.Fprintf(stderr, "Error getting latest timestamp: %v\n", err)
+		logger.LogAttrs(ctx, slog.LevelError, "Error getting OHLCStartEnd", slog.Any("Error", err))
 	}
-	fmt.Fprintf(stdout, "start: %v, end: %v\n", startEnd.Min, startEnd.Max)
+	logger.LogAttrs(
+		ctx,
+		slog.LevelDebug,
+		"runPolyGrouped",
+		slog.Any("Start:", startEnd.Min),
+		slog.Any("End:", startEnd.Max),
+	)
 	var minDate, maxDate *time.Time
 	if start, ok := startEnd.Min.(time.Time); !ok {
 		minDate = nil
@@ -196,21 +202,32 @@ func runPolyGrouped(
 	}
 	di := NewDateIter(days, minDate, maxDate, time.Now())
 	for di.Next() {
-		fmt.Fprintf(stdout, "next date: %v\n", di.Date)
+		logger.LogAttrs(ctx, slog.LevelDebug, "next", slog.Any("date", di.Date))
 		params := &models.GroupedDailyParams{
 			Date: models.Date(di.Date),
 		}
 		res, err := polyClient.GroupedDailyBars(ctx, params)
 		if err != nil {
-			fmt.Fprintf(stderr, "Prototype groupedDaily call: %v\n", err)
+			logger.LogAttrs(ctx, slog.LevelError, "Error from GroupedDailyBars", slog.Any("Error", err))
 			break
 		}
-		fmt.Fprintf(stdout, "result count: %d, status: %s\n", res.ResultCount, res.Status)
+		logger.LogAttrs(
+			ctx,
+			slog.LevelDebug,
+			"GroupedDailyBars Result",
+			slog.Int("result count", res.ResultCount),
+			slog.String("status:", res.Status),
+		)
 		for i, tickerDay := range res.Results {
 			if i >= 5 {
 				break
 			}
-			fmt.Fprintf(stdout, " * %+v\n", tickerDay)
+			logger.LogAttrs(
+				ctx,
+				slog.LevelDebug,
+				"Results",
+				slog.Any("TickerDay", tickerDay),
+			)
 			_, err := dbq.CreateTickerTimestamp(ctx, database.CreateTickerTimestampParams{
 				Ticker: tickerDay.Ticker,
 				Ts:     time.Time(tickerDay.Timestamp),
@@ -221,7 +238,7 @@ func runPolyGrouped(
 				Volume: strconv.FormatFloat(tickerDay.Volume, 'f', 2, 64),
 			})
 			if err != nil {
-				fmt.Fprintf(stderr, "Error adding ticker/timestamp to db: %v\n", err)
+				logger.LogAttrs(ctx, slog.LevelError, "Error adding ticker/timestamp to db", slog.Any("Error", err))
 			}
 		}
 	}

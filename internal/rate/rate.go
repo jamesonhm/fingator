@@ -16,11 +16,10 @@ func New(period time.Duration, count int) *Limiter {
 	rate := period / time.Duration(count)
 
 	rl := &Limiter{
-		ch:   make(chan time.Time),
-		done: make(chan struct{}),
+		ch:     make(chan time.Time),
+		done:   make(chan struct{}),
+		ticker: time.NewTicker(rate),
 	}
-
-	rl.ticker = time.NewTicker(rate)
 
 	go func() {
 		defer rl.ticker.Stop()

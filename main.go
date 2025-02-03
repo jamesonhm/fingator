@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,6 +15,7 @@ import (
 	"github.com/jamesonhm/fingator/internal/database"
 	"github.com/jamesonhm/fingator/internal/openfigi"
 	"github.com/jamesonhm/fingator/internal/polygon"
+
 	//"github.com/jamesonhm/fingator/internal/rate"
 
 	//edgar "github.com/jamesonhm/fingator/internal/sec"
@@ -21,8 +23,6 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
-
-// TODO: Explore the "Must" pattern for env variables and others
 
 func Xrun(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) error {
 	dburl := getenv("DB_URL")
@@ -68,7 +68,8 @@ func Xrun(ctx context.Context, getenv func(string) string, stdout, stderr io.Wri
 
 // func run(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) error {
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
 
 	// Env Variable Load
 	godotenv.Load()
@@ -83,6 +84,10 @@ func main() {
 	// Scheduler and Tasks
 	s, _ := gocron.NewScheduler()
 	defer func() { _ = s.Shutdown() }()
+
+	// defer functions are processed LIFO, context cancel must run before scheduler shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	//rl := rate.New(time.Second, 2)
 	//_, _ = s.NewJob(
@@ -102,12 +107,12 @@ func main() {
 
 	polyGrouped, err := s.NewJob(
 		gocron.DailyJob(1, gocron.NewAtTimes(gocron.NewAtTime(5, 0, 0))),
-		gocron.NewTask(runPolyGrouped, ctx, dbq, polyClient, 7, os.Stdout, os.Stderr),
+		gocron.NewTask(runPolyGrouped, ctx, dbq, polyClient, 7, logger),
 		gocron.WithContext(ctx),
 		gocron.WithStartAt(gocron.WithStartImmediately()),
 	)
 	if err != nil {
-		fmt.Printf("error creating job: %v\n", err)
+		logger.ErrorContext(ctx, "error creating job:", "Error:", err)
 		return
 	}
 
@@ -120,8 +125,7 @@ func main() {
 
 	// Block until an interrupt signal is recieved
 	<-c
-	fmt.Println("\nMain func exit...")
-	cancel()
+	logger.InfoContext(ctx, "Main func exit...")
 
 }
 
