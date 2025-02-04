@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -41,7 +42,7 @@ func (c *Client) Call(ctx context.Context, path string, params, response any) er
 	//if err != nil {
 	//	return err
 	//}
-	fmt.Printf("client-call-uri: %s\n", uri)
+	slog.LogAttrs(ctx, slog.LevelInfo, "Polygon Call", slog.String("URI", uri))
 	return c.CallURL(ctx, uri, response)
 }
 

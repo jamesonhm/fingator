@@ -18,8 +18,8 @@ import (
 
 	//"github.com/jamesonhm/fingator/internal/rate"
 
-	//edgar "github.com/jamesonhm/fingator/internal/sec"
 	"github.com/go-co-op/gocron/v2"
+	edgar "github.com/jamesonhm/fingator/internal/sec"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -57,16 +57,6 @@ func Xrun(ctx context.Context, getenv func(string) string, stdout, stderr io.Wri
 	return nil
 }
 
-//func main() {
-//	ctx := context.Background()
-//	godotenv.Load()
-//	if err := run(ctx, os.Getenv, os.Stdout, os.Stderr); err != nil {
-//		fmt.Fprintf(os.Stderr, "%s\n", err)
-//		os.Exit(1)
-//	}
-//}
-
-// func run(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) error {
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
@@ -79,44 +69,56 @@ func main() {
 	dbq := database.New(db)
 
 	// API Clients
-	polyClient := polygon.New(mustEnv("POLYGON_API_KEY"), time.Second*10, time.Minute, 5)
+	polyClient := polygon.New(
+		mustEnv("POLYGON_API_KEY"),
+		time.Second*10,
+		time.Minute,
+		5,
+	)
+
+	edgarClient := edgar.New(
+		mustEnv("EDGAR_COMPANY_NAME"),
+		mustEnv("EDGAR_COMPANY_EMAIL"),
+		time.Second*10,
+		time.Second,
+		10,
+	)
 
 	// Scheduler and Tasks
-	s, _ := gocron.NewScheduler()
+	s, _ := gocron.NewScheduler(
+		gocron.WithLogger(logger),
+	)
 	defer func() { _ = s.Shutdown() }()
 
 	// defer functions are processed LIFO, context cancel must run before scheduler shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	//rl := rate.New(time.Second, 2)
-	//_, _ = s.NewJob(
-	//	gocron.DurationJob(10*time.Second),
-	//	gocron.NewTask(
-	//		func(ctx context.Context, a string, b int) {
-	//			for i := range b {
-	//				<-rl.Throttle
-	//				fmt.Println(time.Now(), "a:", a, "b:", i)
-	//			}
-	//		},
-	//		"hello",
-	//		8,
-	//	),
-	//	gocron.WithContext(ctx),
-	//)
-
-	polyGrouped, err := s.NewJob(
+	// OHLCV from polygon, weekday-ly
+	// TODO: update to CronJob running after close of weekdays
+	_, err := s.NewJob(
 		gocron.DailyJob(1, gocron.NewAtTimes(gocron.NewAtTime(5, 0, 0))),
 		gocron.NewTask(runPolyGrouped, ctx, dbq, polyClient, 7, logger),
 		gocron.WithContext(ctx),
 		gocron.WithStartAt(gocron.WithStartImmediately()),
 	)
+
+	// CIK/Ticker/Exchange from Edgar, monthly
+	_, err = s.NewJob(
+		gocron.MonthlyJob(
+			1,
+			gocron.NewDaysOfTheMonth(1),
+			gocron.NewAtTimes(gocron.NewAtTime(12, 0, 0)),
+		),
+		gocron.NewTask(runEdgarTickers, ctx, dbq, edgarClient, logger),
+		gocron.WithContext(ctx),
+		gocron.WithStartAt(gocron.WithStartImmediately()),
+	)
 	if err != nil {
-		logger.ErrorContext(ctx, "error creating job:", "Error:", err)
+		logger.LogAttrs(ctx, slog.LevelError, "error creating job", slog.Any("Error:", err))
 		return
 	}
 
-	fmt.Println(polyGrouped.ID())
 	s.Start()
 
 	// Handle interrupt signals (ctrl-c) for graceful shutdown
@@ -127,19 +129,4 @@ func main() {
 	<-c
 	logger.InfoContext(ctx, "Main func exit...")
 
-}
-
-func mustEnv(key string) string {
-	val := os.Getenv(key)
-	if val == "" {
-		panic(fmt.Sprintf("Env variable %s required", key))
-	}
-	return val
-}
-
-func must[T any](val T, err error) T {
-	if err != nil {
-		panic(err)
-	}
-	return val
 }

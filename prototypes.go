@@ -1,7 +1,6 @@
 package main
 
 import (
-	//"database/sql"
 	"context"
 	"fmt"
 	"io"
@@ -18,12 +17,13 @@ import (
 	emodels "github.com/jamesonhm/fingator/internal/sec/models"
 )
 
-func runEdgarTickers(ctx context.Context, dbq *database.Queries, edgarClient edgar.Client, stdout, stderr io.Writer) {
+func runEdgarTickers(ctx context.Context, dbq *database.Queries, edgarClient edgar.Client, logger *slog.Logger) {
+	logger.LogAttrs(ctx, slog.LevelInfo, "Edgar Tickers Started")
 	companies, err := edgarClient.GetCompanyTickers(ctx)
 	if err != nil {
-		fmt.Fprintf(stderr, "Error getting companies\n")
+		logger.LogAttrs(ctx, slog.LevelError, "Error getting OHLCStartEnd", slog.Any("Error", err))
 	}
-	fmt.Fprintf(stdout, "no. of companies: %d\n", len(companies))
+	logger.LogAttrs(ctx, slog.LevelDebug, "Edgar Tickers", slog.Int("no. of companies:", len(companies)))
 
 	for _, comp := range companies {
 		_, err := dbq.CreateCompany(ctx, database.CreateCompanyParams{
@@ -33,9 +33,16 @@ func runEdgarTickers(ctx context.Context, dbq *database.Queries, edgarClient edg
 			Exchange: comp.Exchange,
 		})
 		if err != nil {
-			fmt.Fprintf(stderr, "error adding company %+v: %v\n", comp, err)
+			logger.LogAttrs(
+				ctx,
+				slog.LevelError,
+				"DB error adding company",
+				slog.Any("company", comp),
+				slog.Any("Error", err),
+			)
 		}
 	}
+	logger.LogAttrs(ctx, slog.LevelInfo, "Edgar Tickers Complete", slog.Int("no. of companies:", len(companies)))
 }
 
 func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar.Client, stdout, stderr io.Writer) {
@@ -102,10 +109,14 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar
 	}
 }
 
-func runEdgarFilings(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) {
-	agentName := getenv("EDGAR_COMPANY_NAME")
-	agentEmail := getenv("EDGAR_COMPANY_EMAIL")
-	edgarClient := edgar.New(agentName, agentEmail, time.Second*10, 1)
+func runEdgarFilings(
+	ctx context.Context,
+	dbq *database.Queries,
+	edgarClient edgar.Client,
+	logger *slog.Logger,
+	stdout,
+	stderr io.Writer,
+) {
 
 	formType := "13F-HR"
 	resCount := 100
@@ -132,10 +143,13 @@ func runEdgarFilings(ctx context.Context, getenv func(string) string, stdout, st
 
 }
 
-func runEdgarCompanyFilings(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) {
-	agentName := getenv("EDGAR_COMPANY_NAME")
-	agentEmail := getenv("EDGAR_COMPANY_EMAIL")
-	edgarClient := edgar.New(agentName, agentEmail, time.Second*10, 1)
+func runEdgarCompanyFilings(
+	ctx context.Context,
+	edgarClient edgar.Client,
+	getenv func(string) string,
+	stdout,
+	stderr io.Writer,
+) {
 
 	formType := "13F-HR"
 	resCount := 100
@@ -178,6 +192,8 @@ func runPolyGrouped(
 	days int,
 	logger *slog.Logger,
 ) {
+	logger.LogAttrs(ctx, slog.LevelInfo, "Polygon Grouped Daily Bars Started", slog.Int("History Days", days))
+
 	startEnd, err := dbq.OHLCStartEnd(ctx)
 	if err != nil {
 		logger.LogAttrs(ctx, slog.LevelError, "Error getting OHLCStartEnd", slog.Any("Error", err))
@@ -202,30 +218,38 @@ func runPolyGrouped(
 	}
 	di := NewDateIter(days, minDate, maxDate, time.Now())
 	for di.Next() {
-		logger.LogAttrs(ctx, slog.LevelDebug, "next", slog.Any("date", di.Date))
+		logger.LogAttrs(
+			ctx,
+			slog.LevelDebug,
+			"GroupedDailyBars next",
+			slog.Time("date", di.Date),
+			slog.Int("range", di.Range()),
+		)
 		params := &models.GroupedDailyParams{
 			Date: models.Date(di.Date),
 		}
 		res, err := polyClient.GroupedDailyBars(ctx, params)
 		if err != nil {
-			logger.LogAttrs(ctx, slog.LevelError, "Error from GroupedDailyBars", slog.Any("Error", err))
+			logger.LogAttrs(ctx, slog.LevelError, "GroupedDailyBars method call", slog.Any("Error", err))
 			break
 		}
 		logger.LogAttrs(
 			ctx,
-			slog.LevelDebug,
+			slog.LevelInfo,
 			"GroupedDailyBars Result",
+			slog.Any("date", di.Date),
 			slog.Int("result count", res.ResultCount),
 			slog.String("status:", res.Status),
 		)
 		for i, tickerDay := range res.Results {
+			// TODO: Remove in Production
 			if i >= 5 {
 				break
 			}
 			logger.LogAttrs(
 				ctx,
 				slog.LevelDebug,
-				"Results",
+				"GroupedDailyBars Results",
 				slog.Any("TickerDay", tickerDay),
 			)
 			_, err := dbq.CreateTickerTimestamp(ctx, database.CreateTickerTimestampParams{
@@ -238,7 +262,7 @@ func runPolyGrouped(
 				Volume: strconv.FormatFloat(tickerDay.Volume, 'f', 2, 64),
 			})
 			if err != nil {
-				logger.LogAttrs(ctx, slog.LevelError, "Error adding ticker/timestamp to db", slog.Any("Error", err))
+				logger.LogAttrs(ctx, slog.LevelError, "GroupedDailyBars Error adding ticker/timestamp to db", slog.Any("Error", err))
 			}
 		}
 	}

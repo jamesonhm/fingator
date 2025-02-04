@@ -69,6 +69,16 @@ func (i *DateIter) nextMin() bool {
 	return true
 }
 
+func (i *DateIter) Range() int {
+	if i.minDate == nil && i.maxDate == nil {
+		return 0
+	} else if i.minDate == nil || i.maxDate == nil {
+		return 1
+	} else {
+		return weekdaysBetween(*i.minDate, *i.maxDate)
+	}
+}
+
 func midnight(d time.Time) time.Time {
 	return time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, d.Location())
 }

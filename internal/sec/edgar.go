@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/jamesonhm/fingator/internal/encdec"
+	"github.com/jamesonhm/fingator/internal/rate"
 	"github.com/jamesonhm/fingator/internal/sec/models"
 	"github.com/jamesonhm/fingator/internal/uri"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
-	"golang.org/x/time/rate"
 )
 
 const (
@@ -32,7 +32,10 @@ type Client struct {
 	limiter    *rate.Limiter
 }
 
-func New(agentName, agentEmail string, timeout time.Duration, reqsPerSec rate.Limit) Client {
+// Create a new reference to an Edgar Client
+// agentName and Email are sent as request headers to monitor requests
+// period and count are used to rate limit requests to count/period
+func New(agentName, agentEmail string, timeout time.Duration, period time.Duration, count int) Client {
 	return Client{
 		agentName:  agentName,
 		agentEmail: agentEmail,
@@ -41,20 +44,31 @@ func New(agentName, agentEmail string, timeout time.Duration, reqsPerSec rate.Li
 			Timeout: timeout,
 		},
 		uriBuilder: uri.New(),
-		limiter:    rate.NewLimiter(reqsPerSec, 1),
+		limiter:    rate.New(period, count),
 	}
 }
 
 // Call makes API call based on path and params
-func (c *Client) Call(ctx context.Context, base string, path string, params, response any, decFunc models.DecFunc) error {
+func (c *Client) Call(
+	ctx context.Context,
+	base string,
+	path string,
+	params,
+	response any,
+	decFunc models.DecFunc,
+) error {
 	uri := c.uriBuilder.EncodeParams(path, params)
 	uri = base + uri
 	fmt.Printf("client-call-uri: %s\n", uri)
 	return c.CallURL(ctx, uri, response, decFunc)
 }
 
+// CallURL makes an API call based on a fully parameterized URL
 func (c *Client) CallURL(ctx context.Context, uri string, response any, decFunc models.DecFunc) error {
-	c.limiter.Wait(ctx)
+	err := c.limiter.Wait(ctx)
+	if err != nil {
+		return err
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
 	if err != nil {
 		return err
@@ -75,6 +89,7 @@ func (c *Client) CallURL(ctx context.Context, uri string, response any, decFunc 
 	return nil
 }
 
+// Get a list of CIK's to tickers from SEC
 func (c *Client) GetCompanyTickers(ctx context.Context) ([]models.Company, error) {
 	res := &models.CompanyTickersResponse{}
 	var companies []models.Company
@@ -125,13 +140,20 @@ func (c *Client) GetCompanyTickers(ctx context.Context) ([]models.Company, error
 	return companies, nil
 }
 
-func (c *Client) GetCompanyFacts(ctx context.Context, params *models.CompanyFactsParams) (*models.CompanyFactsResponse, error) {
+// Get a full list of company facts, each with their historical values from past submissions
+func (c *Client) GetCompanyFacts(
+	ctx context.Context,
+	params *models.CompanyFactsParams,
+) (*models.CompanyFactsResponse, error) {
 	res := &models.CompanyFactsResponse{}
 	err := c.Call(ctx, BaseDataURL, CompanyFactsPath, params, res, encdec.DecodeJsonResp)
 	return res, err
 }
 
-func (c *Client) FetchFilings(ctx context.Context, params *models.BrowseEdgarParams) (*models.FetchFilingsResponse, error) {
+func (c *Client) FetchFilings(
+	ctx context.Context,
+	params *models.BrowseEdgarParams,
+) (*models.FetchFilingsResponse, error) {
 	res := &models.FetchFilingsResponse{}
 	err := c.Call(ctx, LatestFilingsPath, "", params, res, encdec.DecodeXmlResp)
 	return res, err
