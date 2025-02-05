@@ -1,7 +1,6 @@
 package main
 
 import (
-	//"database/sql"
 	"context"
 	"database/sql"
 	"fmt"
@@ -15,8 +14,6 @@ import (
 	"github.com/jamesonhm/fingator/internal/database"
 	"github.com/jamesonhm/fingator/internal/openfigi"
 	"github.com/jamesonhm/fingator/internal/polygon"
-
-	//"github.com/jamesonhm/fingator/internal/rate"
 
 	"github.com/go-co-op/gocron/v2"
 	edgar "github.com/jamesonhm/fingator/internal/sec"
@@ -32,18 +29,6 @@ func Xrun(ctx context.Context, getenv func(string) string, stdout, stderr io.Wri
 	}
 	defer db.Close()
 	//dbq := database.New(db)
-
-	//serveport := getenv("PORT")
-	//fmt.Fprintf(stdout, "env variables - dburl: %s, serveport: %s\n", dburl, serveport)
-
-	//polyClient := polygon.New(getenv("POLYGON_API_KEY"), time.Second*10, 0.083)
-	//runPolyGrouped(ctx, dbq, polyClient, stdout, stderr)
-
-	//agentName := getenv("EDGAR_COMPANY_NAME")
-	//agentEmail := getenv("EDGAR_COMPANY_EMAIL")
-	//edgarClient := edgar.New(agentName, agentEmail, time.Second*10, 10)
-
-	//runEdgarTickers(ctx, dbq, edgarClient, stdout, stderr)
 
 	//runEdgarFacts(ctx, dbq, edgarClient, stdout, stderr)
 
