@@ -6,6 +6,7 @@
 !*/
 # Unignore makefile
 !Makefile
+!Dockerfile
 # Ignore bin dir
 bin/*
 # ignore .git dir
