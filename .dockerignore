@@ -4,11 +4,7 @@
 !*.*
 # Unignore directories
 !*/
-# Unignore makefile
-!Makefile
 # Ignore bin dir
 bin/*
-# ignore .git dir
-.git/*
 # ignore .env
 *.env

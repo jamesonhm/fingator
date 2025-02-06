@@ -79,6 +79,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	logger.LogAttrs(ctx, slog.LevelInfo, "Env vars", slog.String("DB_URL", dburl))
+
 	// OHLCV from polygon, weekday-ly
 	// TODO: update to CronJob running after close of weekdays
 	_, err := s.NewJob(

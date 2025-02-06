@@ -197,6 +197,7 @@ func runPolyGrouped(
 	startEnd, err := dbq.OHLCStartEnd(ctx)
 	if err != nil {
 		logger.LogAttrs(ctx, slog.LevelError, "Error getting OHLCStartEnd", slog.Any("Error", err))
+		return
 	}
 	logger.LogAttrs(
 		ctx,
