@@ -21,36 +21,38 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func Xrun(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) error {
-	dburl := getenv("DB_URL")
-	db, err := sql.Open("postgres", dburl)
-	if err != nil {
-		return fmt.Errorf("unable to connect to db: %v", err)
-	}
-	defer db.Close()
-	//dbq := database.New(db)
-
-	//runEdgarFacts(ctx, dbq, edgarClient, stdout, stderr)
-
-	//runEdgarFilings(ctx, getenv, stdout, stderr)
-	//fmt.Fprintf(stdout, "==============================================\n")
-	//runEdgarCompanyFilings(ctx, getenv, stdout, stderr)
-
-	figiClient := openfigi.New(getenv("OPENFIGI_API_KEY"), time.Second*10, 4)
-	runOpenFigiCusips(ctx, figiClient, stdout, stderr)
-
-	return nil
-}
+const (
+	DaysOHLCVHistory = 1
+)
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
+	// Scheduler and Tasks
+	s, _ := gocron.NewScheduler(
+		gocron.WithLogger(logger),
+	)
+	defer func() { _ = s.Shutdown() }()
+
+	// defer functions are processed LIFO, context cancel must run before scheduler shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// Env Variable Load
 	godotenv.Load()
 	dburl := mustEnv("DB_URL")
+	logger.LogAttrs(ctx, slog.LevelInfo, "Env vars", slog.String("DB_URL", dburl))
+
 	db := must(sql.Open("postgres", dburl))
 	defer db.Close()
+
+	err := setup(ctx, db, logger)
+	if err != nil {
+		logger.LogAttrs(ctx, slog.LevelError, "Setup function failed", slog.Any("Error", err))
+		panic(err)
+	}
+
 	dbq := database.New(db)
 
 	// API Clients
@@ -69,23 +71,11 @@ func main() {
 		10,
 	)
 
-	// Scheduler and Tasks
-	s, _ := gocron.NewScheduler(
-		gocron.WithLogger(logger),
-	)
-	defer func() { _ = s.Shutdown() }()
-
-	// defer functions are processed LIFO, context cancel must run before scheduler shutdown
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	logger.LogAttrs(ctx, slog.LevelInfo, "Env vars", slog.String("DB_URL", dburl))
-
 	// OHLCV from polygon, weekday-ly
 	// TODO: update to CronJob running after close of weekdays
-	_, err := s.NewJob(
+	_, err = s.NewJob(
 		gocron.DailyJob(1, gocron.NewAtTimes(gocron.NewAtTime(5, 0, 0))),
-		gocron.NewTask(runPolyGrouped, ctx, dbq, polyClient, 7, logger),
+		gocron.NewTask(runPolyGrouped, ctx, dbq, polyClient, DaysOHLCVHistory, logger),
 		gocron.WithContext(ctx),
 		gocron.WithStartAt(gocron.WithStartImmediately()),
 	)
@@ -116,4 +106,25 @@ func main() {
 	<-c
 	logger.InfoContext(ctx, "Main func exit...")
 
+}
+
+func Xrun(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) error {
+	dburl := getenv("DB_URL")
+	db, err := sql.Open("postgres", dburl)
+	if err != nil {
+		return fmt.Errorf("unable to connect to db: %v", err)
+	}
+	defer db.Close()
+	//dbq := database.New(db)
+
+	//runEdgarFacts(ctx, dbq, edgarClient, stdout, stderr)
+
+	//runEdgarFilings(ctx, getenv, stdout, stderr)
+	//fmt.Fprintf(stdout, "==============================================\n")
+	//runEdgarCompanyFilings(ctx, getenv, stdout, stderr)
+
+	figiClient := openfigi.New(getenv("OPENFIGI_API_KEY"), time.Second*10, 4)
+	runOpenFigiCusips(ctx, figiClient, stdout, stderr)
+
+	return nil
 }

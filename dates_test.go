@@ -69,3 +69,16 @@ func TestDateIterNil(t *testing.T) {
 	actual := di.Date
 	assert.Equal(t, actual, expected)
 }
+
+func TestDateIterNilOne(t *testing.T) {
+	var minDate *time.Time = nil
+	var maxDate *time.Time = nil
+	today := time.Date(2025, 2, 7, 6, 0, 0, 0, time.Local)
+	di := NewDateIter(1, minDate, maxDate, today)
+
+	di.Next()
+
+	expected := time.Date(2025, 2, 6, 0, 0, 0, 0, time.Local)
+	actual := di.Date
+	assert.Equal(t, actual, expected)
+}
