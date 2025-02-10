@@ -244,7 +244,7 @@ func runPolyGrouped(
 		)
 		for i, tickerDay := range res.Results {
 			// TODO: Remove in Production
-			if i >= 5 {
+			if i >= 20 {
 				break
 			}
 			logger.LogAttrs(

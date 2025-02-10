@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	DaysOHLCVHistory = 1
+	DaysOHLCVHistory = 3
 )
 
 func main() {

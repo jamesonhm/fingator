@@ -1,18 +1,9 @@
 services:
-  fingator:
-    build: .
-    env_file:
-      - .env
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - app-network
-
   db:
     image: postgres:14.15
     env_file:
       - .env
+    user: postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -36,6 +27,7 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      GUNICORN_ACCESS_LOGFILE: "/dev/null"
     ports:
       - "5050:80"
     depends_on:
@@ -43,17 +35,30 @@ services:
     networks:
       - app-network
 
+  fingator:
+    build: .
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana-enterprise
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    networks:
+      - app-network
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
 networks:
   app-network:
     driver: bridge
 
-  #  grafana:
-  #    image: grafana/grafana-enterprise
-  #    container_name: grafana
-  #    restart: unless-stopped
-  #    ports:
-  #      - '3000:3000'
-  #    volumes:
-  #      - grafana-storage:/var/lib/grafana
-  #volumes:
-  #  grafana-storage: {}
+volumes:
+  grafana-storage: {}
