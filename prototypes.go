@@ -45,15 +45,16 @@ func runEdgarTickers(ctx context.Context, dbq *database.Queries, edgarClient edg
 	logger.LogAttrs(ctx, slog.LevelInfo, "Edgar Tickers Complete", slog.Int("no. of companies:", len(companies)))
 }
 
-func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar.Client, stdout, stderr io.Writer) {
+func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar.Client, logger *slog.Logger) {
+	logger.LogAttrs(ctx, slog.LevelInfo, "Edgar Facts Started")
 	// TODO: Uncomment next 9 lines in prod
 	//ciks, err := dbq.GetExchangeCiks(ctx)
 	//if err != nil {
-	//	fmt.Fprintf(stderr, "Error getting company ciks: %v\n", err)
+	//	logger.LogAttrs(ctx, slog.LevelError, "Error getting company facts", slog.Any("Error", err))
 	//	return
 	//}
 	//if len(ciks) == 0 {
-	//	fmt.Fprintf(stderr, "Error, no CIK's found\n")
+	//	logger.LogAttrs(ctx, slog.LevelError, "No CIK's found")
 	//	return
 	//}
 
@@ -68,7 +69,13 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar
 		}
 		res, err := edgarClient.GetCompanyFacts(ctx, params)
 		if err != nil {
-			fmt.Fprintf(stderr, "Error getting company facts for cik %d: %v\n", cik, err)
+			logger.LogAttrs(
+				ctx,
+				slog.LevelError,
+				"Error Getting Company Facts",
+				slog.Int("cik", int(cik)),
+				slog.Any("Error", err),
+			)
 		}
 
 		facts := edgar.FilterDCF(res)
@@ -91,7 +98,7 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar
 				units = "SHARES"
 			}
 			for _, entry := range entries[l-min(l, numFP):] {
-				dbq.CreateFact(ctx, database.CreateFactParams{
+				err = dbq.CreateFact(ctx, database.CreateFactParams{
 					Cik:          cik,
 					Category:     fact.Category,
 					Tag:          fact.Tag,
@@ -104,9 +111,19 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar
 					FiscalPeriod: entry.FiscalPeriod,
 					Form:         entry.Form,
 				})
+				if err != nil {
+					logger.LogAttrs(
+						ctx,
+						slog.LevelError,
+						"Error adding fact data to DB",
+						slog.Int("cik", int(cik)),
+						slog.Any("Error", err),
+					)
+				}
 			}
 		}
 	}
+	logger.LogAttrs(ctx, slog.LevelInfo, "Edgar Facts Complete")
 }
 
 func runEdgarFilings(

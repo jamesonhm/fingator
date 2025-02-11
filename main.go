@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jamesonhm/fingator/internal/database"
 	"github.com/jamesonhm/fingator/internal/openfigi"
 	"github.com/jamesonhm/fingator/internal/polygon"
@@ -71,15 +72,6 @@ func main() {
 		10,
 	)
 
-	// OHLCV from polygon, weekday-ly
-	// TODO: update to CronJob running after close of weekdays
-	_, err = s.NewJob(
-		gocron.DailyJob(1, gocron.NewAtTimes(gocron.NewAtTime(5, 0, 0))),
-		gocron.NewTask(runPolyGrouped, ctx, dbq, polyClient, DaysOHLCVHistory, logger),
-		gocron.WithContext(ctx),
-		gocron.WithStartAt(gocron.WithStartImmediately()),
-	)
-
 	// CIK/Ticker/Exchange from Edgar, monthly
 	_, err = s.NewJob(
 		gocron.MonthlyJob(
@@ -90,7 +82,24 @@ func main() {
 		gocron.NewTask(runEdgarTickers, ctx, dbq, edgarClient, logger),
 		gocron.WithContext(ctx),
 		gocron.WithStartAt(gocron.WithStartImmediately()),
+		gocron.WithEventListeners(
+			gocron.AfterJobRuns(
+				func(jobID uuid.UUID, jobName string) {
+					runEdgarFacts(ctx, dbq, edgarClient, logger)
+				},
+			),
+		),
 	)
+
+	// OHLCV from polygon, weekday-ly
+	// TODO: update to CronJob running after close of weekdays
+	_, err = s.NewJob(
+		gocron.DailyJob(1, gocron.NewAtTimes(gocron.NewAtTime(5, 0, 0))),
+		gocron.NewTask(runPolyGrouped, ctx, dbq, polyClient, DaysOHLCVHistory, logger),
+		gocron.WithContext(ctx),
+		gocron.WithStartAt(gocron.WithStartImmediately()),
+	)
+
 	if err != nil {
 		logger.LogAttrs(ctx, slog.LevelError, "error creating job", slog.Any("Error:", err))
 		return
