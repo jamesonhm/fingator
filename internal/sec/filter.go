@@ -1,12 +1,14 @@
 package edgar
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/jamesonhm/fingator/internal/sec/models"
 )
 
-func FilterDCF(cf *models.CompanyFactsResponse) []*models.FilteredFact {
+func FilterDCF(ctx context.Context, cf *models.CompanyFactsResponse, logger *slog.Logger) []*models.FilteredFact {
 
 	var XBRLTags = map[string][]string{
 		"CashFlow": {
@@ -62,7 +64,13 @@ func FilterDCF(cf *models.CompanyFactsResponse) []*models.FilteredFact {
 	for key, tags := range XBRLTags {
 		factData, err := findFact(cf.Facts.USGAAP, key, tags)
 		if err != nil {
-			fmt.Printf("%v, cik: %d\n", err, cf.CIK)
+			logger.LogAttrs(
+				ctx,
+				slog.LevelError,
+				"Unable to find Fact",
+				slog.Int("CIK", int(cf.CIK)),
+				slog.String("Key", key),
+			)
 			continue
 		}
 		filteredFacts = append(filteredFacts, factData)

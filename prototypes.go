@@ -78,7 +78,7 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar
 			)
 		}
 
-		facts := edgar.FilterDCF(res)
+		facts := edgar.FilterDCF(ctx, res, logger)
 		for _, fact := range facts {
 			const numFP = 40
 			var entries []emodels.UnitEntry

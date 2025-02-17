@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 )
 
 type CompanyFactsParams struct {
@@ -25,6 +26,33 @@ type FactData struct {
 	Label       string   `json:"label"`
 	Description string   `json:"description"`
 	Units       UnitData `json:"units"`
+}
+
+func (f *FactData) Age() int {
+	var fy int
+	switch f.UnitLabel() {
+	case "USD":
+		fy = f.Units.USD[len(f.Units.USD)-1].FiscalYear
+	case "PURE":
+		fy = f.Units.Pure[len(f.Units.Pure)-1].FiscalYear
+	case "SHARES":
+		fy = f.Units.Shares[len(f.Units.Shares)-1].FiscalYear
+	}
+	return time.Now().Year() - fy
+}
+
+func (f *FactData) UnitLabel() string {
+	if len(f.Units.USD) > 0 {
+		return "USD"
+	} else if len(f.Units.Pure) > 0 {
+		return "PURE"
+	} else {
+		return "SHARES"
+	}
+}
+
+func (f *FactData) UnitEntries() []UnitEntry {
+
 }
 
 type UnitData struct {
