@@ -29,30 +29,51 @@ type FactData struct {
 }
 
 func (f *FactData) Age() int {
-	var fy int
-	switch f.UnitLabel() {
+	return time.Now().Year() - f.LastFY()
+}
+
+func (f *FactData) LastFY() int {
+	units, _ := f.LabelUnits()
+	switch units {
 	case "USD":
-		fy = f.Units.USD[len(f.Units.USD)-1].FiscalYear
+		return f.Units.USD[len(f.Units.USD)-1].FiscalYear
 	case "PURE":
-		fy = f.Units.Pure[len(f.Units.Pure)-1].FiscalYear
+		return f.Units.Pure[len(f.Units.Pure)-1].FiscalYear
 	case "SHARES":
-		fy = f.Units.Shares[len(f.Units.Shares)-1].FiscalYear
+		return f.Units.Shares[len(f.Units.Shares)-1].FiscalYear
+	default:
+		return 0
 	}
-	return time.Now().Year() - fy
 }
 
-func (f *FactData) UnitLabel() string {
+func (f *FactData) LabelUnits() (string, error) {
 	if len(f.Units.USD) > 0 {
-		return "USD"
+		return "USD", nil
 	} else if len(f.Units.Pure) > 0 {
-		return "PURE"
+		return "PURE", nil
+	} else if len(f.Units.Shares) > 0 {
+		return "SHARES", nil
 	} else {
-		return "SHARES"
+		return "", fmt.Errorf("Unknow units for label `%s`", f.Label)
 	}
 }
 
-func (f *FactData) UnitEntries() []UnitEntry {
-
+func (f *FactData) UnitEntries(lastn int) []UnitEntry {
+	var l int
+	units, _ := f.LabelUnits()
+	switch units {
+	case "USD":
+		l = len(f.Units.USD)
+		return f.Units.USD[l-min(l, lastn):]
+	case "PURE":
+		l = len(f.Units.Pure)
+		return f.Units.Pure[l-min(l, lastn):]
+	case "SHARES":
+		l = len(f.Units.Shares)
+		return f.Units.Shares[l-min(l, lastn):]
+	default:
+		return nil
+	}
 }
 
 type UnitData struct {

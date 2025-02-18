@@ -81,23 +81,26 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar
 		facts := edgar.FilterDCF(ctx, res, logger)
 		for _, fact := range facts {
 			const numFP = 40
-			var entries []emodels.UnitEntry
-			var units string
-			var l int
-			if len(fact.Units.USD) > 0 {
-				l = len(fact.Units.USD)
-				entries = fact.Units.USD
-				units = "USD"
-			} else if len(fact.Units.Pure) > 0 {
-				l = len(fact.Units.Pure)
-				entries = fact.Units.Pure
-				units = "PURE"
-			} else if len(fact.Units.Shares) > 0 {
-				l = len(fact.Units.Shares)
-				entries = fact.Units.Shares
-				units = "SHARES"
+			units, err := fact.LabelUnits()
+			if err != nil {
+				logger.LogAttrs(
+					ctx,
+					slog.LevelError,
+					"Unknow Units Label",
+					slog.Any("Error", err),
+				)
+				continue
 			}
-			for _, entry := range entries[l-min(l, numFP):] {
+			entries := fact.UnitEntries(numFP)
+			logger.LogAttrs(
+				ctx,
+				slog.LevelInfo,
+				"Fact Info",
+				slog.String("units", units),
+				slog.Int("Num Entries", len(entries)),
+			)
+
+			for _, entry := range entries {
 				err = dbq.CreateFact(ctx, database.CreateFactParams{
 					Cik:          cik,
 					Category:     fact.Category,

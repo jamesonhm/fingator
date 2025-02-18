@@ -2,6 +2,7 @@ package edgar
 
 import (
 	"context"
+	//"encoding/json"
 	"fmt"
 	"log/slog"
 
@@ -24,6 +25,7 @@ func FilterDCF(ctx context.Context, cf *models.CompanyFactsResponse, logger *slo
 		"Revenue": {
 			"Revenues",
 			"RevenueFromContractWithCustomerExcludingAssessedTax",
+			"SalesRevenueNet",
 			"SalesRevenueGoodsNet",
 			"SalesRevenueServicesNet",
 			"SalesRevenueEnergyServices",
@@ -62,7 +64,7 @@ func FilterDCF(ctx context.Context, cf *models.CompanyFactsResponse, logger *slo
 
 	var filteredFacts []*models.FilteredFact
 	for key, tags := range XBRLTags {
-		factData, err := findFact(cf.Facts.USGAAP, key, tags)
+		factData, err := findFact(ctx, cf.Facts.USGAAP, key, tags, logger)
 		if err != nil {
 			logger.LogAttrs(
 				ctx,
@@ -78,10 +80,31 @@ func FilterDCF(ctx context.Context, cf *models.CompanyFactsResponse, logger *slo
 	return filteredFacts
 }
 
-func findFact(d map[string]models.FactData, key string, tags []string) (*models.FilteredFact, error) {
+func findFact(
+	ctx context.Context,
+	d map[string]models.FactData,
+	key string,
+	tags []string,
+	logger *slog.Logger,
+) (*models.FilteredFact, error) {
 	for i := 0; i < len(tags); i++ {
 		fact, ok := d[tags[i]]
 		if !ok {
+			continue
+		}
+		if fact.Age() > 1 {
+			units, _ := fact.LabelUnits()
+			logger.LogAttrs(
+				ctx,
+				slog.LevelInfo,
+				"Fact skipped with age greater than 1",
+				slog.String("Category", key),
+				slog.String("Label", fact.Label),
+				slog.Int("FY", fact.LastFY()),
+				slog.String("units", units),
+			)
+			//b, _ := json.MarshalIndent(fact, "", "  ")
+			//fmt.Println(string(b))
 			continue
 		}
 
