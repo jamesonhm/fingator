@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strconv"
 	"time"
 )
@@ -55,6 +56,31 @@ func (f *FactData) LabelUnits() (string, error) {
 		return "SHARES", nil
 	} else {
 		return "", fmt.Errorf("Unknow units for label `%s`", f.Label)
+	}
+}
+
+func (f *FactData) Filter() {
+	var ue []UnitEntry
+	units, _ := f.LabelUnits()
+	switch units {
+	case "USD":
+		ue = f.Units.USD
+		ue = slices.DeleteFunc(ue, func(v UnitEntry) bool {
+			return v.Form != "10-K" && v.Form != "10-Q" && v.Form != "10-Q/A"
+		})
+		f.Units.USD = ue
+	case "PURE":
+		ue = f.Units.Pure
+		ue = slices.DeleteFunc(ue, func(v UnitEntry) bool {
+			return v.Form != "10-K" && v.Form != "10-Q" && v.Form != "10-Q/A"
+		})
+		f.Units.Pure = ue
+	case "SHARES":
+		ue = f.Units.Shares
+		ue = slices.DeleteFunc(ue, func(v UnitEntry) bool {
+			return v.Form != "10-K" && v.Form != "10-Q" && v.Form != "10-Q/A"
+		})
+		f.Units.Shares = ue
 	}
 }
 
