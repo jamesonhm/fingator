@@ -46,20 +46,20 @@ services:
     networks:
       - app-network
 
-  grafana:
-    image: grafana/grafana-enterprise
-    container_name: grafana
-    restart: unless-stopped
-    ports:
-      - '3000:3000'
-    networks:
-      - app-network
-    volumes:
-      - grafana-storage:/var/lib/grafana
+#  grafana:
+#    image: grafana/grafana-enterprise
+#    container_name: grafana
+#    restart: unless-stopped
+#    ports:
+#      - '3000:3000'
+#    networks:
+#      - app-network
+#    volumes:
+#      - grafana-storage:/var/lib/grafana
 
 networks:
   app-network:
     driver: bridge
 
-volumes:
-  grafana-storage: {}
+#volumes:
+#  grafana-storage: {}

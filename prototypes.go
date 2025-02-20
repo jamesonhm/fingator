@@ -80,7 +80,6 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar
 
 		facts := edgar.FilterDCF(ctx, res, logger)
 		for _, fact := range facts {
-			const numFP = 40
 			units, err := fact.LabelUnits()
 			if err != nil {
 				logger.LogAttrs(
@@ -91,15 +90,7 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar
 				)
 				continue
 			}
-			entries := fact.UnitEntries(numFP)
-			logger.LogAttrs(
-				ctx,
-				slog.LevelInfo,
-				"Fact Info",
-				slog.String("units", units),
-				slog.Int("Num Entries", len(entries)),
-			)
-
+			entries := fact.UnitEntries()
 			for _, entry := range entries {
 				err = dbq.CreateFact(ctx, database.CreateFactParams{
 					Cik:          cik,

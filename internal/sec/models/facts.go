@@ -14,6 +14,8 @@ type CompanyFactsParams struct {
 
 type CIKWrapper int
 
+// TODO: This could be flattened with a custom Unmarshal, eliminating all the switching on units...
+// https://go.dev/play/p/83VHShfE5rI
 type CompanyFactsResponse struct {
 	CIK        CIKWrapper `json:"cik"`
 	EntityName string     `json:"entityName"`
@@ -34,14 +36,26 @@ func (f *FactData) Age() int {
 }
 
 func (f *FactData) LastFY() int {
+	findyr := func(ue []UnitEntry) int {
+		maxyr := 0
+		for _, e := range ue {
+			if e.FiscalYear > maxyr {
+				maxyr = e.FiscalYear
+			}
+		}
+		return maxyr
+	}
 	units, _ := f.LabelUnits()
 	switch units {
 	case "USD":
-		return f.Units.USD[len(f.Units.USD)-1].FiscalYear
+		return findyr(f.Units.USD)
+		//return f.Units.USD[len(f.Units.USD)-1].FiscalYear
 	case "PURE":
-		return f.Units.Pure[len(f.Units.Pure)-1].FiscalYear
+		return findyr(f.Units.USD)
+		//return f.Units.Pure[len(f.Units.Pure)-1].FiscalYear
 	case "SHARES":
-		return f.Units.Shares[len(f.Units.Shares)-1].FiscalYear
+		return findyr(f.Units.USD)
+		//return f.Units.Shares[len(f.Units.Shares)-1].FiscalYear
 	default:
 		return 0
 	}
@@ -59,44 +73,51 @@ func (f *FactData) LabelUnits() (string, error) {
 	}
 }
 
-func (f *FactData) Filter() {
+func (f *FactData) Filter() error {
 	var ue []UnitEntry
-	units, _ := f.LabelUnits()
+	minYr := time.Now().Year() - 10
+	units, err := f.LabelUnits()
+	if err != nil {
+		return err
+	}
+	delf := func(v UnitEntry) bool {
+		return (v.Form != "10-K" && v.Form != "10-Q" && v.Form != "10-Q/A") || v.FiscalYear < minYr
+	}
 	switch units {
 	case "USD":
 		ue = f.Units.USD
-		ue = slices.DeleteFunc(ue, func(v UnitEntry) bool {
-			return v.Form != "10-K" && v.Form != "10-Q" && v.Form != "10-Q/A"
-		})
+		ue = slices.DeleteFunc(ue, delf)
+		if len(ue) == 0 {
+			return fmt.Errorf("All elements filtered out")
+		}
 		f.Units.USD = ue
 	case "PURE":
 		ue = f.Units.Pure
-		ue = slices.DeleteFunc(ue, func(v UnitEntry) bool {
-			return v.Form != "10-K" && v.Form != "10-Q" && v.Form != "10-Q/A"
-		})
+		ue = slices.DeleteFunc(ue, delf)
+		if len(ue) == 0 {
+			return fmt.Errorf("All elements filtered out")
+		}
 		f.Units.Pure = ue
 	case "SHARES":
 		ue = f.Units.Shares
-		ue = slices.DeleteFunc(ue, func(v UnitEntry) bool {
-			return v.Form != "10-K" && v.Form != "10-Q" && v.Form != "10-Q/A"
-		})
+		ue = slices.DeleteFunc(ue, delf)
+		if len(ue) == 0 {
+			return fmt.Errorf("All elements filtered out")
+		}
 		f.Units.Shares = ue
 	}
+	return nil
 }
 
-func (f *FactData) UnitEntries(lastn int) []UnitEntry {
-	var l int
+func (f *FactData) UnitEntries() []UnitEntry {
 	units, _ := f.LabelUnits()
 	switch units {
 	case "USD":
-		l = len(f.Units.USD)
-		return f.Units.USD[l-min(l, lastn):]
+		return f.Units.USD
 	case "PURE":
-		l = len(f.Units.Pure)
-		return f.Units.Pure[l-min(l, lastn):]
+		return f.Units.Pure
 	case "SHARES":
-		l = len(f.Units.Shares)
-		return f.Units.Shares[l-min(l, lastn):]
+		return f.Units.Shares
 	default:
 		return nil
 	}

@@ -2,7 +2,7 @@ package edgar
 
 import (
 	"context"
-	"encoding/json"
+	//"encoding/json"
 	"fmt"
 	"log/slog"
 
@@ -73,8 +73,8 @@ func FilterDCF(ctx context.Context, cf *models.CompanyFactsResponse, logger *slo
 				slog.Int("CIK", int(cf.CIK)),
 				slog.String("Key", key),
 			)
-			//continue
-			break
+			continue
+			//break
 		}
 		filteredFacts = append(filteredFacts, factData)
 	}
@@ -93,9 +93,19 @@ func findFact(
 		if !ok {
 			continue
 		}
-		fact.Filter()
+		err := fact.Filter()
+		if err != nil {
+			logger.LogAttrs(
+				ctx,
+				slog.LevelError,
+				"Fact skipped with Filter error",
+				slog.Any("Error", err),
+				slog.String("Category", key),
+				slog.String("Label", fact.Label),
+			)
+			continue
+		}
 		if fact.Age() > 1 {
-			units, _ := fact.LabelUnits()
 			logger.LogAttrs(
 				ctx,
 				slog.LevelInfo,
@@ -103,12 +113,11 @@ func findFact(
 				slog.String("Category", key),
 				slog.String("Label", fact.Label),
 				slog.Int("FY", fact.LastFY()),
-				slog.String("units", units),
 			)
-			b, _ := json.MarshalIndent(fact, "", "  ")
-			fmt.Println(string(b))
-			//continue
-			break
+			//b, _ := json.MarshalIndent(fact, "", "  ")
+			//fmt.Println(string(b))
+			continue
+			//break
 		}
 
 		return &models.FilteredFact{
