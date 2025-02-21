@@ -51,10 +51,10 @@ func (f *FactData) LastFY() int {
 		return findyr(f.Units.USD)
 		//return f.Units.USD[len(f.Units.USD)-1].FiscalYear
 	case "PURE":
-		return findyr(f.Units.USD)
+		return findyr(f.Units.Pure)
 		//return f.Units.Pure[len(f.Units.Pure)-1].FiscalYear
 	case "SHARES":
-		return findyr(f.Units.USD)
+		return findyr(f.Units.Shares)
 		//return f.Units.Shares[len(f.Units.Shares)-1].FiscalYear
 	default:
 		return 0

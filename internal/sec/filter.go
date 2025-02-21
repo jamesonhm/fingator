@@ -97,11 +97,11 @@ func findFact(
 		if err != nil {
 			logger.LogAttrs(
 				ctx,
-				slog.LevelError,
-				"Fact skipped with Filter error",
+				slog.LevelInfo,
+				"Fact skipped, Filter error",
 				slog.Any("Error", err),
-				slog.String("Category", key),
-				slog.String("Label", fact.Label),
+				slog.String("Key", key),
+				slog.String("Tag", tags[i]),
 			)
 			continue
 		}
@@ -109,13 +109,11 @@ func findFact(
 			logger.LogAttrs(
 				ctx,
 				slog.LevelInfo,
-				"Fact skipped with age greater than 1",
-				slog.String("Category", key),
-				slog.String("Label", fact.Label),
+				"Fact skipped, age > 1",
+				slog.String("Key", key),
+				slog.String("Tag", tags[i]),
 				slog.Int("FY", fact.LastFY()),
 			)
-			//b, _ := json.MarshalIndent(fact, "", "  ")
-			//fmt.Println(string(b))
 			continue
 			//break
 		}
