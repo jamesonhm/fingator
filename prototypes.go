@@ -122,11 +122,9 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient edgar
 
 func runEdgarFilings(
 	ctx context.Context,
-	dbq *database.Queries,
+	//dbq *database.Queries,
 	edgarClient edgar.Client,
 	logger *slog.Logger,
-	stdout,
-	stderr io.Writer,
 ) {
 
 	formType := "13F-HR"
@@ -139,7 +137,12 @@ func runEdgarFilings(
 	}
 	res, err := edgarClient.FetchFilings(ctx, params)
 	if err != nil {
-		fmt.Fprintf(stderr, "error getting latest filings: %v\n", err)
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Fetch Filings Err",
+			slog.Any("Error", err),
+		)
 	}
 
 	for i, entry := range res.Entries {
@@ -147,9 +150,20 @@ func runEdgarFilings(
 			break
 		}
 		cik := string(entry.CIK())
-		fmt.Fprintf(stdout, "Co (cik): %s (%s)\n", entry.Title, cik)
+		logger.LogAttrs(
+			ctx,
+			slog.LevelInfo,
+			"Filings Results",
+			slog.String("Company", entry.Title),
+			slog.String("cik", cik),
+		)
 		path, _ := edgarClient.InfotableURLFromHTML(ctx, entry)
-		fmt.Fprintf(stdout, "--%s\n\n", path)
+		logger.LogAttrs(
+			ctx,
+			slog.LevelInfo,
+			"Infotable",
+			slog.String("Path", path),
+		)
 	}
 
 }

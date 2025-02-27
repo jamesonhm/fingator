@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io"
+	//	"io"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jamesonhm/fingator/internal/database"
-	"github.com/jamesonhm/fingator/internal/openfigi"
+	//	"github.com/jamesonhm/fingator/internal/openfigi"
 	"github.com/jamesonhm/fingator/internal/polygon"
 
 	"github.com/go-co-op/gocron/v2"
@@ -26,7 +26,7 @@ const (
 	DaysOHLCVHistory = 3
 )
 
-func main() {
+func Xmain() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
@@ -117,23 +117,31 @@ func main() {
 
 }
 
-func Xrun(ctx context.Context, getenv func(string) string, stdout, stderr io.Writer) error {
-	dburl := getenv("DB_URL")
-	db, err := sql.Open("postgres", dburl)
-	if err != nil {
-		return fmt.Errorf("unable to connect to db: %v", err)
-	}
-	defer db.Close()
-	//dbq := database.New(db)
+func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	//runEdgarFacts(ctx, dbq, edgarClient, stdout, stderr)
+	godotenv.Load()
 
-	//runEdgarFilings(ctx, getenv, stdout, stderr)
-	//fmt.Fprintf(stdout, "==============================================\n")
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
+	edgarClient := edgar.New(
+		mustEnv("EDGAR_COMPANY_NAME"),
+		mustEnv("EDGAR_COMPANY_EMAIL"),
+		time.Second*10,
+		time.Second,
+		10,
+	)
+
+	runEdgarFilings(
+		ctx,
+		edgarClient,
+		logger,
+	)
+	fmt.Println("==============================================")
 	//runEdgarCompanyFilings(ctx, getenv, stdout, stderr)
 
-	figiClient := openfigi.New(getenv("OPENFIGI_API_KEY"), time.Second*10, 4)
-	runOpenFigiCusips(ctx, figiClient, stdout, stderr)
-
-	return nil
+	//figiClient := openfigi.New(os.Getenv("OPENFIGI_API_KEY"), time.Second*10, 4)
+	//runOpenFigiCusips(ctx, figiClient, stdout, stderr)
 }
