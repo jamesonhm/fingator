@@ -134,13 +134,12 @@ func main() {
 		10,
 	)
 
-	runEdgarFilings(
+	runEdgarCompanyFilings(
 		ctx,
 		edgarClient,
 		logger,
 	)
 	fmt.Println("==============================================")
-	//runEdgarCompanyFilings(ctx, getenv, stdout, stderr)
 
 	//figiClient := openfigi.New(os.Getenv("OPENFIGI_API_KEY"), time.Second*10, 4)
 	//runOpenFigiCusips(ctx, figiClient, stdout, stderr)

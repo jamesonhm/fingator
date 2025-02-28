@@ -170,10 +170,9 @@ func runEdgarFilings(
 
 func runEdgarCompanyFilings(
 	ctx context.Context,
+	//dbq *database.Queries,
 	edgarClient edgar.Client,
-	getenv func(string) string,
-	stdout,
-	stderr io.Writer,
+	logger *slog.Logger,
 ) {
 
 	formType := "13F-HR"
@@ -188,24 +187,24 @@ func runEdgarCompanyFilings(
 	}
 	compRes, err := edgarClient.FetchFilings(ctx, params)
 	if err != nil {
-		fmt.Fprintf(stderr, "error getting company filings: %v\n", err)
+		logger.LogAttrs(ctx, slog.LevelError, "error getting company filings", slog.Any("Error", err))
 	}
-	fmt.Fprintf(stdout, "%+v\n\n", compRes.CompanyInfo)
+	logger.LogAttrs(ctx, slog.LevelInfo, "Company Result", slog.Any("Info", compRes.CompanyInfo))
 	for _, e := range compRes.Entries {
-		fmt.Fprintf(stdout, "\nAccession: %v\n", e.AccessionNo())
-		fmt.Fprintf(stdout, "Link: %s\n", e.Link.Href.String())
+		fmt.Println("Accession:", e.AccessionNo())
+		fmt.Println("Link:", e.Link.Href.String())
 		path, _ := edgarClient.InfotableURLFromHTML(ctx, e)
-		fmt.Fprintf(stdout, "--%s\n", path)
+		fmt.Println("--", path)
 		holdings, err := edgarClient.FetchHoldings(ctx, path)
 		if err != nil {
-			fmt.Fprintf(stderr, "%v\n", err)
+			logger.LogAttrs(ctx, slog.LevelError, "Error getting company holdings", slog.Any("Error", err))
 			continue
 		}
 		for i, h := range holdings.InfoTable {
 			if i >= 10 {
 				break
 			}
-			fmt.Fprintf(stdout, "*%+v\n", h)
+			fmt.Println("* ", h)
 		}
 	}
 }
