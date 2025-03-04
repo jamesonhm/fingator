@@ -5,7 +5,7 @@ CREATE TABLE cusips (
     ticker VARCHAR(50) NOT NULL,
     exchange_code VARCHAR(10) NOT NULL,
     security_type VARCHAR(50),
-    CONSTRAINT cusips_pkey PRIMARY KEY (cusip),
+    CONSTRAINT cusips_pkey PRIMARY KEY (cusip)
 );
 
 -- +goose Down

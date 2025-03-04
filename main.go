@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	//"fmt"
 	//	"io"
 	"log/slog"
 	"os"
@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
+	//"github.com/google/uuid"
 	"github.com/jamesonhm/fingator/internal/database"
 	//	"github.com/jamesonhm/fingator/internal/openfigi"
 	"github.com/jamesonhm/fingator/internal/polygon"
@@ -26,7 +26,7 @@ const (
 	DaysOHLCVHistory = 3
 )
 
-func Xmain() {
+func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
@@ -82,13 +82,13 @@ func Xmain() {
 		gocron.NewTask(runEdgarTickers, ctx, dbq, edgarClient, logger),
 		gocron.WithContext(ctx),
 		gocron.WithStartAt(gocron.WithStartImmediately()),
-		gocron.WithEventListeners(
-			gocron.AfterJobRuns(
-				func(jobID uuid.UUID, jobName string) {
-					runEdgarFacts(ctx, dbq, edgarClient, logger)
-				},
-			),
-		),
+		//gocron.WithEventListeners(
+		//	gocron.AfterJobRuns(
+		//		func(jobID uuid.UUID, jobName string) {
+		//			runEdgarFacts(ctx, dbq, edgarClient, logger)
+		//		},
+		//	),
+		//),
 	)
 
 	// OHLCV from polygon, weekday-ly
@@ -96,6 +96,13 @@ func Xmain() {
 	_, err = s.NewJob(
 		gocron.DailyJob(1, gocron.NewAtTimes(gocron.NewAtTime(5, 0, 0))),
 		gocron.NewTask(runPolyGrouped, ctx, dbq, polyClient, DaysOHLCVHistory, logger),
+		gocron.WithContext(ctx),
+		gocron.WithStartAt(gocron.WithStartImmediately()),
+	)
+
+	_, err = s.NewJob(
+		gocron.DailyJob(1, gocron.NewAtTimes(gocron.NewAtTime(6, 0, 0))),
+		gocron.NewTask(runEdgarCompanyFilings, ctx, dbq, edgarClient, logger),
 		gocron.WithContext(ctx),
 		gocron.WithStartAt(gocron.WithStartImmediately()),
 	)
@@ -117,29 +124,30 @@ func Xmain() {
 
 }
 
-func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func Xmain() {
+	//ctx, cancel := context.WithCancel(context.Background())
+	//defer cancel()
 
 	godotenv.Load()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	edgarClient := edgar.New(
-		mustEnv("EDGAR_COMPANY_NAME"),
-		mustEnv("EDGAR_COMPANY_EMAIL"),
-		time.Second*10,
-		time.Second,
-		10,
-	)
+	//edgarClient := edgar.New(
+	//	mustEnv("EDGAR_COMPANY_NAME"),
+	//	mustEnv("EDGAR_COMPANY_EMAIL"),
+	//	time.Second*10,
+	//	time.Second,
+	//	10,
+	//)
 
-	runEdgarCompanyFilings(
-		ctx,
-		edgarClient,
-		logger,
-	)
-	fmt.Println("==============================================")
+	//runEdgarCompanyFilings(
+	//	ctx,
+
+	//	edgarClient,
+	//	logger,
+	//)
+	//fmt.Println("==============================================")
 
 	//figiClient := openfigi.New(os.Getenv("OPENFIGI_API_KEY"), time.Second*10, 4)
 	//runOpenFigiCusips(ctx, figiClient, stdout, stderr)

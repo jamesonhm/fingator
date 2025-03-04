@@ -5,6 +5,7 @@ go 1.23.1
 require (
 	github.com/go-co-op/gocron/v2 v2.15.0
 	github.com/go-playground/assert/v2 v2.0.1
+	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
 	github.com/pressly/goose/v3 v3.24.1
@@ -13,7 +14,6 @@ require (
 )
 
 require (
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/jonboulle/clockwork v0.4.0 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect

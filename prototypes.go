@@ -170,41 +170,51 @@ func runEdgarFilings(
 
 func runEdgarCompanyFilings(
 	ctx context.Context,
-	//dbq *database.Queries,
+	dbq *database.Queries,
 	edgarClient edgar.Client,
 	logger *slog.Logger,
 ) {
 
 	formType := "13F-HR"
 	resCount := 100
-	cik := "0001471384"
-	params := &emodels.BrowseEdgarParams{
-		Action: emodels.GetCompany,
-		Type:   &formType,
-		Count:  &resCount,
-		CIK:    &cik,
-		Output: emodels.Atom,
-	}
-	compRes, err := edgarClient.FetchFilings(ctx, params)
+	//cik := "0001471384"
+	filers, err := dbq.GetFilers(ctx)
 	if err != nil {
-		logger.LogAttrs(ctx, slog.LevelError, "error getting company filings", slog.Any("Error", err))
+		logger.LogAttrs(ctx, slog.LevelError, "Unable to get 13F filings", slog.Any("Error", err))
+		return
 	}
-	logger.LogAttrs(ctx, slog.LevelInfo, "Company Result", slog.Any("Info", compRes.CompanyInfo))
-	for _, e := range compRes.Entries {
-		fmt.Println("Accession:", e.AccessionNo())
-		fmt.Println("Link:", e.Link.Href.String())
-		path, _ := edgarClient.InfotableURLFromHTML(ctx, e)
-		fmt.Println("--", path)
-		holdings, err := edgarClient.FetchHoldings(ctx, path)
-		if err != nil {
-			logger.LogAttrs(ctx, slog.LevelError, "Error getting company holdings", slog.Any("Error", err))
-			continue
+	for _, filer := range filers {
+		cik := emodels.NumericCIK(filer.Cik).Pad()
+		fmt.Println("cik:", cik, "name:", filer.Name)
+
+		params := &emodels.BrowseEdgarParams{
+			Action: emodels.GetCompany,
+			Type:   &formType,
+			Count:  &resCount,
+			CIK:    &cik,
+			Output: emodels.Atom,
 		}
-		for i, h := range holdings.InfoTable {
-			if i >= 10 {
-				break
+		compRes, err := edgarClient.FetchFilings(ctx, params)
+		if err != nil {
+			logger.LogAttrs(ctx, slog.LevelError, "error getting company filings", slog.Any("Error", err))
+		}
+		logger.LogAttrs(ctx, slog.LevelInfo, "Company Result", slog.Any("Info", compRes.CompanyInfo))
+		for _, e := range compRes.Entries {
+			fmt.Println("Accession:", e.AccessionNo())
+			fmt.Println("Link:", e.Link.Href.String())
+			path, _ := edgarClient.InfotableURLFromHTML(ctx, e)
+			fmt.Println("--", path)
+			holdings, err := edgarClient.FetchHoldings(ctx, path)
+			if err != nil {
+				logger.LogAttrs(ctx, slog.LevelError, "Error getting company holdings", slog.Any("Error", err))
+				continue
 			}
-			fmt.Println("* ", h)
+			for i, h := range holdings.InfoTable {
+				if i >= 10 {
+					break
+				}
+				fmt.Println("* ", h)
+			}
 		}
 	}
 }
