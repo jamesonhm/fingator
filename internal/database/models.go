@@ -44,9 +44,10 @@ type Filer struct {
 }
 
 type Filing struct {
-	FilingID string
-	Cik      int32
-	Period   time.Time
+	AccessionNo string
+	FilmNo      int64
+	Cik         int32
+	FilingDate  time.Time
 }
 
 type Holding struct {

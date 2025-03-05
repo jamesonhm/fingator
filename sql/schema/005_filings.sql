@@ -1,9 +1,10 @@
 -- +goose Up
 CREATE TABLE filings (
-    filing_id VARCHAR(255),
+    accession_no VARCHAR(255) NOT NULL,
+    film_no BIGINT NOT NULL,
     cik INTEGER NOT NULL REFERENCES filers(cik),
-    period DATE NOT NULL,
-    CONSTRAINT filings_pkey PRIMARY KEY (filing_id)
+    filing_date DATE NOT NULL,
+    CONSTRAINT filings_pkey PRIMARY KEY (accession_no)
 );
 
 -- +goose Down

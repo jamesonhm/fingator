@@ -7,3 +7,5 @@ run: build
 test:
 	go test -v ./... -count=1
 
+sqlcgen:
+	docker run --rm -v $(pwd):/src -w /src sqlc/sqlc generate

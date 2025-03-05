@@ -202,7 +202,44 @@ func runEdgarCompanyFilings(
 		for _, e := range compRes.Entries {
 			fmt.Println("Accession:", e.AccessionNo())
 			fmt.Println("Link:", e.Link.Href.String())
-			path, _ := edgarClient.InfotableURLFromHTML(ctx, e)
+			cik, err := compRes.CIK()
+			if err != nil {
+				logger.LogAttrs(
+					ctx,
+					slog.LevelError,
+					"unable to convert Filer CIK to int",
+					slog.String("Str CIK", compRes.CompanyInfo.CIK),
+				)
+				continue
+			}
+
+			err = dbq.CreateFiling(ctx, database.CreateFilingParams{
+				AccessionNo: e.Content.AccessionNumber,
+				FilmNo:      e.FilmNo(),
+				Cik:         cik,
+				FilingDate:  e.FilingDate(),
+			})
+			if err != nil {
+				logger.LogAttrs(
+					ctx,
+					slog.LevelError,
+					"Unable to create filing entry",
+					slog.Any("Error", err),
+				)
+				continue
+			}
+
+			path, err := edgarClient.InfotableURLFromHTML(ctx, e)
+			if err != nil {
+				logger.LogAttrs(
+					ctx,
+					slog.LevelError,
+					"no holding url found",
+					slog.Any("Error", err),
+				)
+				continue
+			}
+
 			fmt.Println("--", path)
 			holdings, err := edgarClient.FetchHoldings(ctx, path)
 			if err != nil {

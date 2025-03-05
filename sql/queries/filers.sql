@@ -12,11 +12,13 @@ RETURNING *;
 SELECT cik, name
 FROM filers;
 
+-- name: CreateFiling :exec
 INSERT INTO filings (
-    filing_id,
+    accession_no,
+    film_no,
     cik,
-    period
+    filing_date
 ) VALUES (
-    $1, $2, $3
+    $1, $2, $3, $4
 )
 ON CONFLICT ON CONSTRAINT filings_pkey DO NOTHING;

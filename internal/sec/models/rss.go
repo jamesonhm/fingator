@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/xml"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -45,6 +46,11 @@ type FetchFilingsResponse struct {
 	Updated time.Time     `xml:"updated"`
 }
 
+func (ffr *FetchFilingsResponse) CIK() (int32, error) {
+	ncik, err := strconv.ParseInt(ffr.CompanyInfo.CIK, 10, 32)
+	return int32(ncik), err
+}
+
 type FilingEntry struct {
 	Title   string    `xml:"title"`
 	Link    Link      `xml:"link"`
@@ -69,6 +75,19 @@ func (fe *FilingEntry) AccessionNo() string {
 
 func (fe *FilingEntry) CIK() string {
 	return strings.Split(fe.AccessionNo(), "-")[0]
+}
+
+func (fe *FilingEntry) FilingDate() time.Time {
+	fd, _ := time.Parse(time.DateOnly, fe.Content.FilingDate)
+	return fd
+}
+
+func (fe *FilingEntry) FilmNo() int64 {
+	fn, err := strconv.Atoi(fe.Content.FilmNumber)
+	if err != nil {
+		fn = 0
+	}
+	return int64(fn)
 }
 
 type Link struct {

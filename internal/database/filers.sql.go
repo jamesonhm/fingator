@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"time"
 )
 
 const createFiler = `-- name: CreateFiler :one
@@ -30,6 +31,35 @@ func (q *Queries) CreateFiler(ctx context.Context, arg CreateFilerParams) (Filer
 	var i Filer
 	err := row.Scan(&i.Cik, &i.Name)
 	return i, err
+}
+
+const createFiling = `-- name: CreateFiling :exec
+INSERT INTO filings (
+    accession_no,
+    film_no,
+    cik,
+    filing_date
+) VALUES (
+    $1, $2, $3, $4
+)
+ON CONFLICT ON CONSTRAINT filings_pkey DO NOTHING
+`
+
+type CreateFilingParams struct {
+	AccessionNo string
+	FilmNo      int64
+	Cik         int32
+	FilingDate  time.Time
+}
+
+func (q *Queries) CreateFiling(ctx context.Context, arg CreateFilingParams) error {
+	_, err := q.db.ExecContext(ctx, createFiling,
+		arg.AccessionNo,
+		arg.FilmNo,
+		arg.Cik,
+		arg.FilingDate,
+	)
+	return err
 }
 
 const getFilers = `-- name: GetFilers :many
