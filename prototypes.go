@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"io"
 	"log/slog"
@@ -174,7 +175,7 @@ func runEdgarCompanyFilings(
 	edgarClient edgar.Client,
 	logger *slog.Logger,
 ) {
-
+	logger.LogAttrs(ctx, slog.LevelInfo, "Edgar Company Filings Started")
 	formType := "13F-HR"
 	resCount := 100
 	//cik := "0001471384"
@@ -183,10 +184,12 @@ func runEdgarCompanyFilings(
 		logger.LogAttrs(ctx, slog.LevelError, "Unable to get 13F filings", slog.Any("Error", err))
 		return
 	}
-	for _, filer := range filers {
+	for i, filer := range filers {
+		if i > 1 {
+			break
+		}
 		cik := emodels.NumericCIK(filer.Cik).Pad()
-		fmt.Println("cik:", cik, "name:", filer.Name)
-
+		//fmt.Println("cik:", cik, "name:", filer.Name)
 		params := &emodels.BrowseEdgarParams{
 			Action: emodels.GetCompany,
 			Type:   &formType,
@@ -198,10 +201,14 @@ func runEdgarCompanyFilings(
 		if err != nil {
 			logger.LogAttrs(ctx, slog.LevelError, "error getting company filings", slog.Any("Error", err))
 		}
-		logger.LogAttrs(ctx, slog.LevelInfo, "Company Result", slog.Any("Info", compRes.CompanyInfo))
-		for _, e := range compRes.Entries {
-			fmt.Println("Accession:", e.AccessionNo())
-			fmt.Println("Link:", e.Link.Href.String())
+
+		logger.LogAttrs(
+			ctx,
+			slog.LevelInfo,
+			"Filings Found",
+			slog.Int("Count", len(compRes.Entries)),
+		)
+		for j, e := range compRes.Entries {
 			cik, err := compRes.CIK()
 			if err != nil {
 				logger.LogAttrs(
@@ -213,6 +220,17 @@ func runEdgarCompanyFilings(
 				continue
 			}
 
+			cutoff := time.Now().AddDate(-5, 0, 0)
+			if e.FilingDate().Before(cutoff) {
+				logger.LogAttrs(
+					ctx,
+					slog.LevelInfo,
+					"reached cutoff date",
+					slog.String("FilingDate", e.FilingDate().String()),
+					slog.String("count", fmt.Sprintf("%d / %d", j, len(compRes.Entries))),
+				)
+				continue
+			}
 			err = dbq.CreateFiling(ctx, database.CreateFilingParams{
 				AccessionNo: e.Content.AccessionNumber,
 				FilmNo:      e.FilmNo(),
@@ -225,6 +243,8 @@ func runEdgarCompanyFilings(
 					slog.LevelError,
 					"Unable to create filing entry",
 					slog.Any("Error", err),
+					slog.String("Accession", e.AccessionNo()),
+					slog.String("Link", e.Link.Href.String()),
 				)
 				continue
 			}
@@ -236,24 +256,52 @@ func runEdgarCompanyFilings(
 					slog.LevelError,
 					"no holding url found",
 					slog.Any("Error", err),
+					slog.Any("Entry", e),
 				)
 				continue
 			}
 
-			fmt.Println("--", path)
 			holdings, err := edgarClient.FetchHoldings(ctx, path)
 			if err != nil {
 				logger.LogAttrs(ctx, slog.LevelError, "Error getting company holdings", slog.Any("Error", err))
 				continue
 			}
-			for i, h := range holdings.InfoTable {
-				if i >= 10 {
-					break
+
+			logger.LogAttrs(
+				ctx,
+				slog.LevelInfo,
+				"Holdings Found",
+				slog.Int("Count", len(holdings.InfoTable)),
+				slog.String("Date", e.FilingDate().String()),
+				slog.String("URL", path),
+			)
+			for _, h := range holdings.InfoTable {
+				err = dbq.CreateHolding(ctx, database.CreateHoldingParams{
+					AccessionNo:  e.Content.AccessionNumber,
+					NameOfIssuer: h.NameOfIssuer,
+					ClassTitle:   h.TitleOfClass,
+					Cusip:        h.CUSIP,
+					Value:        int64(h.Value),
+					Shares:       int32(h.SharesOrPrnAmt.Amount),
+					PutCall: sql.NullString{
+						String: h.PutCall,
+						Valid:  h.PutCall != "",
+					},
+				})
+				if err != nil {
+					logger.LogAttrs(
+						ctx,
+						slog.LevelError,
+						"Unable to create holding entry",
+						slog.Any("Error", err),
+						slog.Any("holding", h),
+					)
+					continue
 				}
-				fmt.Println("* ", h)
 			}
 		}
 	}
+	logger.LogAttrs(ctx, slog.LevelInfo, "Edgar Company Filings Complete")
 }
 
 func runPolyGrouped(

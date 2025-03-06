@@ -51,11 +51,13 @@ type Filing struct {
 }
 
 type Holding struct {
-	FilingID     string
+	AccessionNo  string
 	NameOfIssuer string
+	ClassTitle   string
 	Cusip        string
 	Value        int64
 	Shares       int32
+	PutCall      sql.NullString
 }
 
 type Ohlc struct {

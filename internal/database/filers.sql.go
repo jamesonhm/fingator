@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
@@ -58,6 +59,43 @@ func (q *Queries) CreateFiling(ctx context.Context, arg CreateFilingParams) erro
 		arg.FilmNo,
 		arg.Cik,
 		arg.FilingDate,
+	)
+	return err
+}
+
+const createHolding = `-- name: CreateHolding :exec
+INSERT INTO holdings (
+    accession_no,
+    name_of_issuer,
+    class_title,
+    cusip,
+    value,
+    shares,
+    put_call
+) VALUES (
+    $1, $2, $3, $4, $5, $6, $7
+)
+`
+
+type CreateHoldingParams struct {
+	AccessionNo  string
+	NameOfIssuer string
+	ClassTitle   string
+	Cusip        string
+	Value        int64
+	Shares       int32
+	PutCall      sql.NullString
+}
+
+func (q *Queries) CreateHolding(ctx context.Context, arg CreateHoldingParams) error {
+	_, err := q.db.ExecContext(ctx, createHolding,
+		arg.AccessionNo,
+		arg.NameOfIssuer,
+		arg.ClassTitle,
+		arg.Cusip,
+		arg.Value,
+		arg.Shares,
+		arg.PutCall,
 	)
 	return err
 }

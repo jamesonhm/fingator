@@ -38,13 +38,13 @@ func setup(ctx context.Context, db *sql.DB, logger *slog.Logger) error {
 	if err != nil {
 		return err
 	}
-	res, err := provider.Up(ctx)
+	_, err = provider.Up(ctx)
 	if err != nil {
 		return err
 	}
 
-	for _, mr := range res {
-		logger.LogAttrs(ctx, slog.LevelInfo, "migration result", slog.String("result", mr.String()))
-	}
+	//for _, mr := range res {
+	//	logger.LogAttrs(ctx, slog.LevelInfo, "migration result", slog.String("result", mr.String()))
+	//}
 	return nil
 }

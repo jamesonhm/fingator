@@ -123,5 +123,6 @@ type FetchHoldingsResponse struct {
 			Amount int    `xml:"sshPrnamt"`
 			Type   string `xml:"sshPrnamtType"`
 		} `xml:"shrsOrPrnAmt"`
+		PutCall string `xml:"putCall"`
 	} `xml:"infoTable"`
 }
