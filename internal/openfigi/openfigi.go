@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jamesonhm/fingator/internal/openfigi/models"
-	"golang.org/x/time/rate"
+	"github.com/jamesonhm/fingator/internal/rate"
 )
 
 const (
@@ -18,20 +18,32 @@ const (
 )
 
 type Client struct {
-	baseurl string
-	apiKey  string
-	httpC   http.Client
-	limiter *rate.Limiter
+	baseurl   string
+	apiKey    string
+	httpC     http.Client
+	limiter   *rate.Limiter
+	Batchsize int
 }
 
-func New(apiKey string, timeout time.Duration, reqsPerSec rate.Limit) Client {
+func New(apiKey string, timeout time.Duration) Client {
+	var period time.Duration
+	var batchsize int
+	if apiKey == "" {
+		period = time.Minute * 1
+		batchsize = 10
+	} else {
+		period = time.Second * 6
+		batchsize = 100
+	}
+	count := 25
 	return Client{
 		baseurl: baseURL,
 		apiKey:  apiKey,
 		httpC: http.Client{
 			Timeout: timeout,
 		},
-		limiter: rate.NewLimiter(reqsPerSec, 1),
+		limiter:   rate.New(period, count),
+		Batchsize: batchsize,
 	}
 }
 

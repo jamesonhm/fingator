@@ -9,7 +9,6 @@ INSERT INTO filers (
     cik, name
 ) VALUES 
     (1647251, 'TCI Fund Management'),
-    (1072761, 'Millenium Management'),
     (1006438, 'Appaloosa Management'),
     (1603466, 'Point72 Asset Management'),
     (1135730, 'Coatue Management'),

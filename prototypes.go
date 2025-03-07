@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io"
+	//"io"
 	"log/slog"
 	"strconv"
 	"time"
@@ -185,7 +185,7 @@ func runEdgarCompanyFilings(
 		return
 	}
 	for i, filer := range filers {
-		if i > 1 {
+		if i >= 1 {
 			break
 		}
 		cik := emodels.NumericCIK(filer.Cik).Pad()
@@ -207,6 +207,7 @@ func runEdgarCompanyFilings(
 			slog.LevelInfo,
 			"Filings Found",
 			slog.Int("Count", len(compRes.Entries)),
+			slog.String("Name", compRes.CompanyInfo.ConformedName),
 		)
 		for j, e := range compRes.Entries {
 			cik, err := compRes.CIK()
@@ -216,6 +217,7 @@ func runEdgarCompanyFilings(
 					slog.LevelError,
 					"unable to convert Filer CIK to int",
 					slog.String("Str CIK", compRes.CompanyInfo.CIK),
+					slog.String("Name", compRes.CompanyInfo.ConformedName),
 				)
 				continue
 			}
@@ -227,9 +229,10 @@ func runEdgarCompanyFilings(
 					slog.LevelInfo,
 					"reached cutoff date",
 					slog.String("FilingDate", e.FilingDate().String()),
-					slog.String("count", fmt.Sprintf("%d / %d", j, len(compRes.Entries))),
+					slog.String("Count", fmt.Sprintf("%d / %d", j+1, len(compRes.Entries))),
+					slog.String("Name", compRes.CompanyInfo.ConformedName),
 				)
-				continue
+				break
 			}
 			err = dbq.CreateFiling(ctx, database.CreateFilingParams{
 				AccessionNo: e.Content.AccessionNumber,
@@ -245,6 +248,7 @@ func runEdgarCompanyFilings(
 					slog.Any("Error", err),
 					slog.String("Accession", e.AccessionNo()),
 					slog.String("Link", e.Link.Href.String()),
+					slog.String("Name", compRes.CompanyInfo.ConformedName),
 				)
 				continue
 			}
@@ -255,15 +259,22 @@ func runEdgarCompanyFilings(
 					ctx,
 					slog.LevelError,
 					"no holding url found",
-					slog.Any("Error", err),
-					slog.Any("Entry", e),
+					slog.Any("Accession", e.AccessionNo()),
+					slog.String("Date", e.FilingDate().String()),
+					slog.String("Name", compRes.CompanyInfo.ConformedName),
 				)
 				continue
 			}
 
 			holdings, err := edgarClient.FetchHoldings(ctx, path)
 			if err != nil {
-				logger.LogAttrs(ctx, slog.LevelError, "Error getting company holdings", slog.Any("Error", err))
+				logger.LogAttrs(
+					ctx,
+					slog.LevelError,
+					"Error getting holdings",
+					slog.Any("Error", err),
+					slog.String("Name", compRes.CompanyInfo.ConformedName),
+				)
 				continue
 			}
 
@@ -275,7 +286,7 @@ func runEdgarCompanyFilings(
 				slog.String("Date", e.FilingDate().String()),
 				slog.String("URL", path),
 			)
-			for _, h := range holdings.InfoTable {
+			for k, h := range holdings.InfoTable {
 				err = dbq.CreateHolding(ctx, database.CreateHoldingParams{
 					AccessionNo:  e.Content.AccessionNumber,
 					NameOfIssuer: h.NameOfIssuer,
@@ -294,6 +305,7 @@ func runEdgarCompanyFilings(
 						slog.LevelError,
 						"Unable to create holding entry",
 						slog.Any("Error", err),
+						slog.String("Count", fmt.Sprintf("%d / %d", k, len(holdings.InfoTable))),
 						slog.Any("holding", h),
 					)
 					continue
@@ -388,19 +400,26 @@ func runPolyGrouped(
 	}
 }
 
-func runOpenFigiCusips(ctx context.Context, figiClient openfigi.Client, stdout, stderr io.Writer) {
+func runOpenFigiCusips(
+	ctx context.Context,
+	dbq *database.Queries,
+	figiClient openfigi.Client,
+	logger *slog.Logger,
+) {
 	// CUSIPS: Abbvie, Alphabet Class C, Amazon
-	cusips := []string{"00287Y109", "02079K107", "023135106"}
-	params := []fmodels.MappingRequest{}
-	for _, c := range cusips {
-		params = append(params, fmodels.MappingRequest{
-			IDType:   fmodels.TypeCUSIP,
-			IDValue:  c,
-			ExchCode: fmodels.ExchUS,
-		})
-	}
+	//cusips := []string{"00287Y109", "02079K107", "023135106"}
+	cusips, err := dbq.GetUnmatchedCusips(ctx)
 
-	fmt.Fprintf(stdout, "%+v\n", params)
+	params := []fmodels.MappingRequest{}
+	for i := 0; i < figiClient.Batchsize; i += 1 {
+		mr := fmodels.MappingRequest{
+			IDType:   fmodels.TypeCUSIP,
+			IDValue:  cusips[i],
+			ExchCode: fmodels.ExchUS,
+		}
+		logger.LogAttrs(ctx, slog.LevelInfo, "OpenFigi Param Batch", slog.Any("MapReq", mr))
+		params = append(params, mr)
+	}
 
 	res, err := figiClient.Mapping(ctx, params)
 	if err != nil {
