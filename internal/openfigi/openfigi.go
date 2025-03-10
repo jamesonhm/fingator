@@ -48,7 +48,10 @@ func New(apiKey string, timeout time.Duration) Client {
 }
 
 func (c *Client) CallURL(ctx context.Context, uri string, params, response any) error {
-	c.limiter.Wait(ctx)
+	err := c.limiter.Wait(ctx)
+	if err != nil {
+		return err
+	}
 	uri = c.baseurl + uri
 
 	body, err := json.Marshal(params)

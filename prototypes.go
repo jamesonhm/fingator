@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
 	//"io"
 	"log/slog"
 	"strconv"
 	"time"
 
 	"github.com/jamesonhm/fingator/internal/database"
+	"github.com/jamesonhm/fingator/internal/iter"
 	"github.com/jamesonhm/fingator/internal/openfigi"
 	fmodels "github.com/jamesonhm/fingator/internal/openfigi/models"
 	"github.com/jamesonhm/fingator/internal/polygon"
@@ -406,30 +408,41 @@ func runOpenFigiCusips(
 	figiClient openfigi.Client,
 	logger *slog.Logger,
 ) {
+	logger.LogAttrs(ctx, slog.LevelInfo, "OpenFigi CUSIP Mapping Started")
 	// CUSIPS: Abbvie, Alphabet Class C, Amazon
 	//cusips := []string{"00287Y109", "02079K107", "023135106"}
 	cusips, err := dbq.GetUnmatchedCusips(ctx)
-
-	params := []fmodels.MappingRequest{}
-	for i := 0; i < figiClient.Batchsize; i += 1 {
-		mr := fmodels.MappingRequest{
-			IDType:   fmodels.TypeCUSIP,
-			IDValue:  cusips[i],
-			ExchCode: fmodels.ExchUS,
-		}
-		logger.LogAttrs(ctx, slog.LevelInfo, "OpenFigi Param Batch", slog.Any("MapReq", mr))
-		params = append(params, mr)
-	}
-
-	res, err := figiClient.Mapping(ctx, params)
 	if err != nil {
-		fmt.Fprintf(stderr, "Error with mapping request: %v\n", err)
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Unable to get unmatched cusips",
+			slog.Any("Error", err),
+		)
 	}
 
-	for _, obj := range *res {
-		for _, d := range obj.Data {
-			fmt.Fprintf(stdout, "%+v\n", d)
+	slIter := iter.NewSliceIter(len(cusips), figiClient.Batchsize)
+	for slIter.Next() {
+		params := []fmodels.MappingRequest{}
+		for i := slIter.Start; i < slIter.End; i += 1 {
+			mr := fmodels.MappingRequest{
+				IDType:   fmodels.TypeCUSIP,
+				IDValue:  cusips[i],
+				ExchCode: fmodels.ExchUS,
+			}
+			logger.LogAttrs(ctx, slog.LevelInfo, "OpenFigi Param Batch", slog.Any("MapReq", mr))
+			params = append(params, mr)
+		}
+
+		res, err := figiClient.Mapping(ctx, params)
+		if err != nil {
+			logger.LogAttrs(ctx, slog.LevelError, "Error with mapping request", slog.Any("Error", err))
+		}
+
+		for _, obj := range *res {
+			for _, d := range obj.Data {
+				fmt.Printf("%+v\n", d)
+			}
 		}
 	}
-
 }

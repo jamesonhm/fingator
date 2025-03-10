@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+
 	//"fmt"
 	//	"io"
 	"log/slog"
@@ -11,8 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	//"github.com/google/uuid"
+	"github.com/google/uuid"
 	"github.com/jamesonhm/fingator/internal/database"
+	"github.com/jamesonhm/fingator/internal/openfigi"
 	//	"github.com/jamesonhm/fingator/internal/openfigi"
 	"github.com/jamesonhm/fingator/internal/polygon"
 
@@ -72,6 +74,11 @@ func main() {
 		10,
 	)
 
+	figiClient := openfigi.New(
+		os.Getenv("OPENFIGI_API_KEY"),
+		time.Second*10,
+	)
+
 	// CIK/Ticker/Exchange from Edgar, monthly
 	_, err = s.NewJob(
 		gocron.MonthlyJob(
@@ -105,6 +112,13 @@ func main() {
 		gocron.NewTask(runEdgarCompanyFilings, ctx, dbq, edgarClient, logger),
 		gocron.WithContext(ctx),
 		gocron.WithStartAt(gocron.WithStartImmediately()),
+		gocron.WithEventListeners(
+			gocron.AfterJobRuns(
+				func(jobID uuid.UUID, jobName string) {
+					runOpenFigiCusips(ctx, dbq, figiClient, logger)
+				},
+			),
+		),
 	)
 
 	if err != nil {
