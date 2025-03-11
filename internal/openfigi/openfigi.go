@@ -72,8 +72,8 @@ func (c *Client) CallURL(ctx context.Context, uri string, params, response any) 
 	}
 
 	defer resp.Body.Close()
-	fmt.Println("resp Body:", resp.Body)
-	fmt.Println("resp Code:", resp.Status)
+	//fmt.Println("resp Body:", resp.Body)
+	//fmt.Println("resp Code:", resp.Status)
 	if err := json.NewDecoder(resp.Body).Decode(response); err != nil {
 		return fmt.Errorf("error decoding json: %w", err)
 	}

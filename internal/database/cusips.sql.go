@@ -7,7 +7,39 @@ package database
 
 import (
 	"context"
+	"database/sql"
 )
+
+const addCusip = `-- name: AddCusip :exec
+INSERT INTO cusips (
+    cusip,
+    security_name,
+    ticker,
+    exchange_code,
+    security_type
+) VALUES (
+    $1, $2, $3, $4, $5
+) ON CONFLICT ON CONSTRAINT cusips_pkey DO NOTHING
+`
+
+type AddCusipParams struct {
+	Cusip        string
+	SecurityName string
+	Ticker       string
+	ExchangeCode string
+	SecurityType sql.NullString
+}
+
+func (q *Queries) AddCusip(ctx context.Context, arg AddCusipParams) error {
+	_, err := q.db.ExecContext(ctx, addCusip,
+		arg.Cusip,
+		arg.SecurityName,
+		arg.Ticker,
+		arg.ExchangeCode,
+		arg.SecurityType,
+	)
+	return err
+}
 
 const getUnmatchedCusips = `-- name: GetUnmatchedCusips :many
 SELECT DISTINCT(cusip)

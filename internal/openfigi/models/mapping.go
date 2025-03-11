@@ -19,4 +19,5 @@ type Object struct {
 	Ticker       string `json:"ticker,omitempty"`
 	Name         string `json:"name,omitempty"`
 	ExchangeCode string `json:"exchCode,omitempty"`
+	MetaData     string `json:"metadata,omitempty"`
 }

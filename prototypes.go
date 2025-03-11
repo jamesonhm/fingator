@@ -423,6 +423,14 @@ func runOpenFigiCusips(
 
 	slIter := iter.NewSliceIter(len(cusips), figiClient.Batchsize)
 	for slIter.Next() {
+		logger.LogAttrs(
+			ctx,
+			slog.LevelInfo,
+			"Unmatched CUSIPS",
+			slog.Int("Total", len(cusips)),
+			slog.Int("Batch Start", slIter.Start),
+			slog.Int("Batch End", slIter.End),
+		)
 		params := []fmodels.MappingRequest{}
 		for i := slIter.Start; i < slIter.End; i += 1 {
 			mr := fmodels.MappingRequest{
@@ -430,7 +438,7 @@ func runOpenFigiCusips(
 				IDValue:  cusips[i],
 				ExchCode: fmodels.ExchUS,
 			}
-			logger.LogAttrs(ctx, slog.LevelInfo, "OpenFigi Param Batch", slog.Any("MapReq", mr))
+			//logger.LogAttrs(ctx, slog.LevelInfo, "OpenFigi Param Batch", slog.Any("MapReq", mr))
 			params = append(params, mr)
 		}
 
@@ -439,10 +447,36 @@ func runOpenFigiCusips(
 			logger.LogAttrs(ctx, slog.LevelError, "Error with mapping request", slog.Any("Error", err))
 		}
 
-		for _, obj := range *res {
-			for _, d := range obj.Data {
-				fmt.Printf("%+v\n", d)
+		for j, obj := range *res {
+			//for _, d := range obj.Data {
+			//for j := 0; j < len(*res); j++ {
+			fmt.Printf("%+v\n", obj.Data)
+			if len(obj.Data) == 0 {
+				fmt.Printf("Skipping length 0\n")
+				continue
+			}
+			fmt.Printf("%+v\n", cusips[slIter.Start+j])
+			err := dbq.AddCusip(ctx, database.AddCusipParams{
+				Cusip:        cusips[slIter.Start+j],
+				SecurityName: obj.Data[0].Name,
+				Ticker:       obj.Data[0].Ticker,
+				ExchangeCode: obj.Data[0].ExchangeCode,
+				SecurityType: sql.NullString{
+					String: obj.Data[0].SecurityType,
+					Valid:  obj.Data[0].SecurityType != "",
+				},
+			})
+			if err != nil {
+				logger.LogAttrs(
+					ctx,
+					slog.LevelError,
+					"Unable to add Cusip",
+					slog.Any("Error", err),
+					slog.String("CUSIP", cusips[j]),
+					slog.Any("Data", obj.Data[j]),
+				)
 			}
 		}
+		//}
 	}
 }
