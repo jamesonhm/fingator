@@ -213,12 +213,8 @@ func runEdgarCompanyFilings(
 		logger.LogAttrs(ctx, slog.LevelError, "Unable to get 13F filers", slog.Any("Error", err))
 		return
 	}
-	for i, filer := range filers {
-		if i >= 1 {
-			break
-		}
+	for _, filer := range filers {
 		cik := emodels.NumericCIK(filer.Cik).Pad()
-		//fmt.Println("cik:", cik, "name:", filer.Name)
 		params := &emodels.BrowseEdgarParams{
 			Action: emodels.GetCompany,
 			Type:   &formType,

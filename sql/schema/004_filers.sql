@@ -8,6 +8,8 @@ CREATE TABLE filers (
 INSERT INTO filers (
     cik, name
 ) VALUES 
+    (1067983, 'Berkshire Hathaway'),
+    (1350694, 'Bridgewater Associates LP'),
     (1647251, 'TCI Fund Management'),
     (1006438, 'Appaloosa Management'),
     (1603466, 'Point72 Asset Management'),
