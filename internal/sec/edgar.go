@@ -35,8 +35,8 @@ type Client struct {
 // Create a new reference to an Edgar Client
 // agentName and Email are sent as request headers to monitor requests
 // period and count are used to rate limit requests to count/period
-func New(agentName, agentEmail string, timeout time.Duration, period time.Duration, count int) Client {
-	return Client{
+func New(agentName, agentEmail string, timeout time.Duration, period time.Duration, count int) *Client {
+	return &Client{
 		agentName:  agentName,
 		agentEmail: agentEmail,
 		baseurl:    BaseDataURL,

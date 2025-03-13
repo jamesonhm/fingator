@@ -73,8 +73,9 @@ func (fe *FilingEntry) AccessionNo() string {
 	return strings.Split(fe.ID, "=")[1]
 }
 
-func (fe *FilingEntry) CIK() string {
-	return strings.Split(fe.AccessionNo(), "-")[0]
+func (fe *FilingEntry) CIK() (int32, error) {
+	ncik, err := strconv.ParseInt(strings.Split(fe.AccessionNo(), "-")[0], 10, 32)
+	return int32(ncik), err
 }
 
 func (fe *FilingEntry) FilingDate() time.Time {

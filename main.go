@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-
 	//"fmt"
 	//	"io"
 	"log/slog"
@@ -12,14 +11,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jamesonhm/fingator/internal/database"
 	"github.com/jamesonhm/fingator/internal/openfigi"
-	//	"github.com/jamesonhm/fingator/internal/openfigi"
 	"github.com/jamesonhm/fingator/internal/polygon"
+	edgar "github.com/jamesonhm/fingator/internal/sec"
 
 	"github.com/go-co-op/gocron/v2"
-	edgar "github.com/jamesonhm/fingator/internal/sec"
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -107,11 +105,13 @@ func main() {
 		gocron.WithStartAt(gocron.WithStartImmediately()),
 	)
 
+	runEdgarCompanyFilings(ctx, dbq, edgarClient, logger)
+
 	_, err = s.NewJob(
 		gocron.DailyJob(1, gocron.NewAtTimes(gocron.NewAtTime(6, 0, 0))),
-		gocron.NewTask(runEdgarCompanyFilings, ctx, dbq, edgarClient, logger),
+		gocron.NewTask(runEdgarFilings, ctx, dbq, edgarClient, logger),
 		gocron.WithContext(ctx),
-		gocron.WithStartAt(gocron.WithStartImmediately()),
+		//gocron.WithStartAt(gocron.WithStartImmediately()),
 		gocron.WithEventListeners(
 			gocron.AfterJobRuns(
 				func(jobID uuid.UUID, jobName string) {
@@ -155,8 +155,7 @@ func Xmain() {
 	//	10,
 	//)
 
-	//runEdgarCompanyFilings(
-	//	ctx,
+	//runEdgarFilings(ctx, edgarClient, logger)
 
 	//	edgarClient,
 	//	logger,
