@@ -83,7 +83,7 @@ func (c *Client) CallURL(ctx context.Context, uri string, response any, decFunc 
 	defer resp.Body.Close()
 	//if err := json.NewDecoder(resp.Body).Decode(response); err != nil {
 	if err := decFunc(resp, response); err != nil {
-		return fmt.Errorf("error decoding json: %w", err)
+		return fmt.Errorf("error decoding: %w", err)
 	}
 
 	return nil
@@ -181,5 +181,31 @@ func (c *Client) InfotableURLFromHTML(ctx context.Context, fe models.FilingEntry
 func (c *Client) FetchHoldings(ctx context.Context, url string) (*models.FetchHoldingsResponse, error) {
 	res := &models.FetchHoldingsResponse{}
 	err := c.CallURL(ctx, url, res, encdec.DecodeXmlResp)
+	return res, err
+}
+
+func (c *Client) File10kURLFromHTML(ctx context.Context, fe models.FilingEntry) (string, error) {
+	url := fe.Link.Href.String()
+	//fmt.Printf("URL: %s\n", url)
+	res := &html.Node{}
+	err := c.CallURL(ctx, url, res, encdec.DecodeHTMLResp)
+	if err != nil {
+		fmt.Printf("Error calling url")
+		return "", err
+	}
+	fmt.Println("Filing HTML:", res)
+
+	for n := range res.Descendants() {
+		if n.Type == html.TextNode && n.Parent.DataAtom == atom.A && strings.Contains(n.Data, ".txt") && !strings.Contains(n.Data, "primary") {
+			//fmt.Printf("Data: %v, Parent Attr Href: %v\n", n.Data, n.Parent.Attr[0].Val)
+			return MainURL + n.Parent.Attr[0].Val, nil
+		}
+	}
+	return "", fmt.Errorf("link to xml filing not found")
+}
+
+func (c *Client) Fetch10k(ctx context.Context, url string) (*string, error) {
+	var res *string
+	err := c.CallURL(ctx, url, res, encdec.DecodeTxtResponse)
 	return res, err
 }

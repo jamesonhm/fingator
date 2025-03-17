@@ -26,7 +26,7 @@ const (
 	DaysOHLCVHistory = 3
 )
 
-func main() {
+func Xmain() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
@@ -138,24 +138,24 @@ func main() {
 
 }
 
-func Xmain() {
-	//ctx, cancel := context.WithCancel(context.Background())
-	//defer cancel()
+func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	godotenv.Load()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	//edgarClient := edgar.New(
-	//	mustEnv("EDGAR_COMPANY_NAME"),
-	//	mustEnv("EDGAR_COMPANY_EMAIL"),
-	//	time.Second*10,
-	//	time.Second,
-	//	10,
-	//)
+	edgarClient := edgar.New(
+		mustEnv("EDGAR_COMPANY_NAME"),
+		mustEnv("EDGAR_COMPANY_EMAIL"),
+		time.Second*10,
+		time.Second,
+		10,
+	)
 
-	//runEdgarFilings(ctx, edgarClient, logger)
+	runEdgar10k(ctx, edgarClient, logger)
 
 	//	edgarClient,
 	//	logger,

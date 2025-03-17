@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	//"io"
 
 	"net/http"
 
@@ -41,5 +42,14 @@ func DecodeHTMLResp(r *http.Response, v any) error {
 	if val, ok := v.(*html.Node); ok {
 		*val = *node
 	}
+	return nil
+}
+
+func DecodeTxtResponse(r *http.Response, v any) error {
+	// body, err := io.ReadAll(r.Body)
+	// if err != nil {
+	// 	return fmt.Errorf("error reading text")
+	// }
+	v = r.Body
 	return nil
 }

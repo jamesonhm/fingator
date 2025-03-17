@@ -48,6 +48,58 @@ func runEdgarTickers(ctx context.Context, dbq *database.Queries, edgarClient *ed
 	logger.LogAttrs(ctx, slog.LevelInfo, "Edgar Tickers Complete", slog.Int("no. of companies:", len(companies)))
 }
 
+func runEdgar10k(
+	ctx context.Context,
+	//dbq *database.Queries,
+	edgarClient *edgar.Client,
+	logger *slog.Logger,
+) {
+	logger.LogAttrs(ctx, slog.LevelInfo, "Edgar Company 10k Started")
+	formType := "10-K"
+	resCount := 100
+	// TODO: Uncomment next 9 lines in prod
+	// ciks, err := dbq.GetExchangeCiks(ctx)
+	// if err != nil {
+	// 	logger.LogAttrs(ctx, slog.LevelError, "Error getting company facts", slog.Any("Error", err))
+	// 	return
+	// }
+	// if len(ciks) == 0 {
+	// 	logger.LogAttrs(ctx, slog.LevelError, "No CIK's found")
+	// 	return
+	// }
+
+	// TODO: Comment next line in prod
+	ciks := []int32{1868275, 320193, 789019}
+	for _, cik := range ciks {
+		cik := emodels.NumericCIK(cik).Pad()
+		params := &emodels.BrowseEdgarParams{
+			Action: emodels.GetCompany,
+			Type:   &formType,
+			Count:  &resCount,
+			CIK:    &cik,
+			Output: emodels.Atom,
+		}
+		res, err := edgarClient.FetchFilings(ctx, params)
+		if err != nil {
+			logger.LogAttrs(ctx, slog.LevelError, "error getting company filings", slog.Any("Error", err))
+		}
+
+		for _, e := range res.Entries {
+			fmt.Printf("Fetch 10-K entry: %+v\n", e)
+			fmt.Println()
+			fmt.Println("link:", e.Link.Href.String())
+			fmt.Println()
+			link, err := edgarClient.File10kURLFromHTML(ctx, e)
+			if err != nil {
+				fmt.Println("error:", err)
+			}
+			fmt.Println(link)
+			rdr, err := edgarClient.Fetch10k(ctx, link)
+		}
+		break
+	}
+}
+
 func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient *edgar.Client, logger *slog.Logger) {
 	logger.LogAttrs(ctx, slog.LevelInfo, "Edgar Facts Started")
 	// TODO: Uncomment next 9 lines in prod
@@ -163,7 +215,7 @@ func runEdgarFilings(
 		slog.Int("Count", len(res.Entries)),
 	)
 	for _, entry := range res.Entries {
-		cik, err := entry.CIK()
+		cik, err := res.CIK()
 		if err != nil {
 			logger.LogAttrs(
 				ctx,
