@@ -1,11 +1,11 @@
 package encdec
 
 import (
+	"bytes"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	//"io"
-
+	"io"
 	"net/http"
 
 	"golang.org/x/net/html"
@@ -46,10 +46,17 @@ func DecodeHTMLResp(r *http.Response, v any) error {
 }
 
 func DecodeTxtResponse(r *http.Response, v any) error {
-	// body, err := io.ReadAll(r.Body)
-	// if err != nil {
-	// 	return fmt.Errorf("error reading text")
-	// }
-	v = r.Body
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+
+	// Type assert v to a pointer to io.Reader
+	rdrPtr, ok := v.(*io.Reader)
+	if !ok {
+		return fmt.Errorf("v must be a pointer to an io.Reader")
+	}
+
+	*rdrPtr = bytes.NewReader(body)
 	return nil
 }

@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-
-	//"io"
 	"log/slog"
 	"strconv"
 	"time"
@@ -85,16 +83,24 @@ func runEdgar10k(
 		}
 
 		for _, e := range res.Entries {
-			fmt.Printf("Fetch 10-K entry: %+v\n", e)
-			fmt.Println()
-			fmt.Println("link:", e.Link.Href.String())
+			//fmt.Printf("Fetch 10-K entry: %+v\n", e)
+			//fmt.Println()
+			fmt.Println("html page:", e.Link.Href.String())
 			fmt.Println()
 			link, err := edgarClient.File10kURLFromHTML(ctx, e)
 			if err != nil {
-				fmt.Println("error:", err)
+				logger.LogAttrs(ctx, slog.LevelError, "error getting 10k URL", slog.Any("Error", err))
 			}
 			fmt.Println(link)
-			rdr, err := edgarClient.Fetch10k(ctx, link)
+			r, err := edgarClient.Fetch10k(ctx, link)
+			if err != nil {
+				logger.LogAttrs(ctx, slog.LevelError, "error getting 10k", slog.Any("Error", err))
+			}
+			err = process10k(r)
+			if err != nil {
+				logger.LogAttrs(ctx, slog.LevelError, "error processing 10k", slog.Any("Error", err))
+			}
+			break
 		}
 		break
 	}

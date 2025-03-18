@@ -3,6 +3,7 @@ package edgar
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -81,7 +82,7 @@ func (c *Client) CallURL(ctx context.Context, uri string, response any, decFunc 
 	}
 
 	defer resp.Body.Close()
-	//if err := json.NewDecoder(resp.Body).Decode(response); err != nil {
+
 	if err := decFunc(resp, response); err != nil {
 		return fmt.Errorf("error decoding: %w", err)
 	}
@@ -201,11 +202,13 @@ func (c *Client) File10kURLFromHTML(ctx context.Context, fe models.FilingEntry) 
 			return MainURL + n.Parent.Attr[0].Val, nil
 		}
 	}
-	return "", fmt.Errorf("link to xml filing not found")
+	return "", fmt.Errorf("link to txt filing not found")
 }
 
-func (c *Client) Fetch10k(ctx context.Context, url string) (*string, error) {
-	var res *string
-	err := c.CallURL(ctx, url, res, encdec.DecodeTxtResponse)
+func (c *Client) Fetch10k(ctx context.Context, url string) (io.Reader, error) {
+	var res io.Reader
+	//var res string
+	err := c.CallURL(ctx, url, &res, encdec.DecodeTxtResponse)
+	fmt.Println("successful call url")
 	return res, err
 }
