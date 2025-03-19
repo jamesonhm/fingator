@@ -3,7 +3,6 @@ package edgar
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -88,6 +87,22 @@ func (c *Client) CallURL(ctx context.Context, uri string, response any, decFunc 
 	}
 
 	return nil
+}
+
+// CallURLopen makes an API call based on a fully parameterized URL and returns, not closes the resp body
+func (c *Client) CallURLopen(ctx context.Context, uri string) (*http.Response, error) {
+	err := c.limiter.Wait(ctx)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("User-Agent", fmt.Sprintf("%s %s", c.agentName, c.agentEmail))
+	resp, err := c.httpC.Do(req)
+	return resp, err
 }
 
 // Get a list of CIK's to tickers from SEC
@@ -205,10 +220,7 @@ func (c *Client) File10kURLFromHTML(ctx context.Context, fe models.FilingEntry) 
 	return "", fmt.Errorf("link to txt filing not found")
 }
 
-func (c *Client) Fetch10k(ctx context.Context, url string) (io.Reader, error) {
-	var res io.Reader
-	//var res string
-	err := c.CallURL(ctx, url, &res, encdec.DecodeTxtResponse)
-	fmt.Println("successful call url")
-	return res, err
+func (c *Client) Fetch10k(ctx context.Context, url string) (*http.Response, error) {
+	resp, err := c.CallURLopen(ctx, url)
+	return resp, err
 }
