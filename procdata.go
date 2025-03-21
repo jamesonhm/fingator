@@ -16,7 +16,13 @@ var (
 	startRegex = regexp.MustCompile(`<DOCUMENT>`)
 	endRegex   = regexp.MustCompile(`</DOCUMENT>`)
 	typeRegex  = regexp.MustCompile(`<TYPE>[^\n]+`)
-	itemRegex  = regexp.MustCompile(`(>Item(\s|&#160;|&nbsp;)(1A|1B|7A|7|8)\\.{0,1})|(ITEM\s(1A|1B|7A|7|8))`)
+	//itemRegex  = regexp.MustCompile(`(>Item(\s|&#160;|&nbsp;)(1A|1B|7A|7|8)\\.{0,1})|(ITEM\s(1A|1B|7A|7|8))`)
+	itemRegex = regexp.MustCompile(`(>(Item|ITEM)(\s|&#160;|&nbsp;)(8|9)\.)`)
+
+	opsRegex  = regexp.MustCompile(`(?i)(CONSOLIDATED\s)?(STATEMENTS? OF\s)(OPERATIONS|EARNINGS)`)
+	incRegex  = regexp.MustCompile(`(?i)(CONSOLIDATED\s)?(STATEMENTS? OF\s)(COMPREHENSIVE INCOME)`)
+	balRegex  = regexp.MustCompile(`(?i)(CONSOLIDATED\s)(BALANCE SHEETS?)`)
+	cashRegex = regexp.MustCompile(`(?i)(CONSOLIDATED\s)?(STATEMENTS? OF\s)(CASH FLOWS?)`)
 )
 
 type Document struct {
@@ -80,6 +86,7 @@ func process10k(r *http.Response) error {
 
 				documents = append(documents, *currentDoc)
 				currentDoc = nil
+				break
 			}
 		}
 		count++
@@ -98,7 +105,18 @@ func extractItems(doc *Document) {
 	fmt.Println("match slice:", itemMatches)
 
 	for _, match := range itemMatches {
-		fmt.Printf("%v - %s\n", match, content[match[0]:match[1]+100])
+		fmt.Printf("%v - %s\n", match, content[match[0]:match[1]+80])
 		fmt.Println()
 	}
+
+	tbls := make(map[string][][]int)
+	for i := 2; i < len(itemMatches); i = i + 2 {
+		stmts := content[itemMatches[i][1]:itemMatches[i+1][0]]
+		opsMatches := opsRegex.FindAllStringIndex(stmts, -1)
+		if len(opsMatches) > 0 {
+			tbls["OpsEarnings"] = opsMatches
+		}
+	}
+	fmt.Printf("Table headers: %v\n", tbls)
+
 }

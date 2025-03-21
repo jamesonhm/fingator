@@ -67,7 +67,7 @@ func runEdgar10k(
 	// }
 
 	// TODO: Comment next line in prod
-	ciks := []int32{1868275, 320193, 789019}
+	ciks := []int32{354950, 1868275, 320193, 789019}
 	for _, cik := range ciks {
 		cik := emodels.NumericCIK(cik).Pad()
 		params := &emodels.BrowseEdgarParams{
