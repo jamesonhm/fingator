@@ -10,18 +10,40 @@ import (
 )
 
 func FilterDCF(ctx context.Context, cf *models.CompanyFactsResponse, logger *slog.Logger) []*models.FilteredFact {
-
-	var XBRLTags = map[string][]string{
-		"CashFlow": {
-			"NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
+	var cashFlowTags = map[string][]string{
+		"NetIncome": {"NetIncomeLoss", "ProfitLoss", "NetIncomeLossAvailableToCommonStockholdersBasic"},
+		"DandA": {
+			"DepreciationAmortizationAndOther",
+			"DepreciationDepletionAndAmortization",
+			"DepreciationAmortizationAndAccretionNet",
+		},
+		"NetCashOps": {
 			"NetCashProvidedByUsedInOperatingActivities",
+			"NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
 		},
 		"CapEx": {
 			"PaymentsToAcquirePropertyPlantAndEquipment",
 			"CapitalExpenditures",
 			"PaymentsToAcquireProductiveAssets",
 		},
-		"NetIncome": {"NetIncomeLoss", "NetIncomeLossAvailableToCommonStockholdersBasic", "ProfitLoss"},
+		"DebtIssuance": {
+			"ProceedsFromIssuanceOfLongTermDebt",
+			"ProceedsFromDebtMaturingInMoreThanThreeMonths",
+			"ProceedsFromIssuanceOfDebt",
+			"ProceedsFromConvertibleDebt",
+		},
+		"DebtRepayment": {
+			"RepaymentsOfLongTermDebt",
+			"RepaymentsOfDebtMaturingInMoreThanThreeMonths",
+			"RepaymentsOfDebt",
+			"RepaymentsOfDebtAndCapitalLeaseObligations",
+			"RepaymentsOfConvertibleDebt",
+		},
+	}
+	var incomeTags = map[string][]string{
+		"EBIT": {
+			"OperatingIncomeLoss",
+		},
 		"Revenue": {
 			"Revenues",
 			"RevenueFromContractWithCustomerExcludingAssessedTax",
@@ -31,40 +53,24 @@ func FilterDCF(ctx context.Context, cf *models.CompanyFactsResponse, logger *slo
 			"SalesRevenueEnergyServices",
 			"OperatingLeasesIncomeStatementLeaseRevenue",
 			"SalesTypeLeaseRevenue"},
-		"DebtRepayment": {
-			"RepaymentsOfDebtAndCapitalLeaseObligations",
-			"RepaymentsOfDebt",
-			"RepaymentsOfConvertibleDebt",
-			"RepaymentsOfLongTermDebt",
+		"TaxExpense": {
+			"IncomeTaxExpenseBenefit",
 		},
-		"DebtIssuance": {
-			"ProceedsFromIssuanceOfDebt",
-			"ProceedsFromIssuanceOfLongTermDebt",
-			"ProceedsFromConvertibleDebt",
+		"PreTaxIncome": {
+			"IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments",
+			"IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest",
 		},
-		"EquityValue": {"StockholdersEquity", "MarketCapitalization"},
-		"DebtValue": {
-			"Liabilities",
-			"LiabilitiesFairValueDisclosure",
-			"LiabilitiesCurrent",
-			"DebtCurrent",
-			"LongTermDebt",
-		},
-		"InterestExpense": {"InterestExpense", "InterestExpenseDebt"},
-		"TaxRate":         {"EffectiveIncomeTaxRateContinuingOperations", "IncomeTaxExpenseBenefit"},
-		"Shares":          {"WeightedAverageNumberOfDilutedSharesOutstanding"},
-		//"NonCashExpense":     {"DepreciationAndAmortization", "DepreciationDepletionAndAmortization"},
-		//"AccountsReceivable": {"IncreaseDecreaseInAccountsReceivable", "AccountsReceivableNetCurrent"},
-		//"Inventory":          {"IncreaseDecreaseInInventories", "InventoryNet"},
-		//"AccountsPayable":    {"IncreaseDecreaseInAccountsPayable", "AccountsPayableCurrent"},
-		//"OperatingExpense":   {"OperatingExpenses"},
-		//"InterestPaid": {"InterestPaid", "InterestPaidNet", "InterestPaidCapitalized"},
-		//"MadeUpCategory":  {"MadeUpTag"},
+		"EPS":    {"EarningsPerShareBasic"},
+		"Shares": {"WeightedAverageNumberOfSharesOutstandingBasic"},
+	}
+	var balanceTags = map[string][]string{
+		"CurrentAssets":      {"AssetsCurrent"},
+		"CurrentLiabilities": {"LiabilitiesCurrent"},
 	}
 
 	var filteredFacts []*models.FilteredFact
-	for key, tags := range XBRLTags {
-		factData, err := findFact(ctx, cf.Facts.USGAAP, key, tags, logger)
+	for key, tags := range cashFlowTags {
+		factData, err := findFact(ctx, cf.Facts.USGAAP, "CashFlow", key, tags, logger)
 		if err != nil {
 			logger.LogAttrs(
 				ctx,
@@ -74,7 +80,34 @@ func FilterDCF(ctx context.Context, cf *models.CompanyFactsResponse, logger *slo
 				slog.String("Key", key),
 			)
 			continue
-			//break
+		}
+		filteredFacts = append(filteredFacts, factData)
+	}
+	for key, tags := range incomeTags {
+		factData, err := findFact(ctx, cf.Facts.USGAAP, "Income", key, tags, logger)
+		if err != nil {
+			logger.LogAttrs(
+				ctx,
+				slog.LevelError,
+				"Unable to find Fact",
+				slog.Int("CIK", int(cf.CIK)),
+				slog.String("Key", key),
+			)
+			continue
+		}
+		filteredFacts = append(filteredFacts, factData)
+	}
+	for key, tags := range balanceTags {
+		factData, err := findFact(ctx, cf.Facts.USGAAP, "Balance", key, tags, logger)
+		if err != nil {
+			logger.LogAttrs(
+				ctx,
+				slog.LevelError,
+				"Unable to find Fact",
+				slog.Int("CIK", int(cf.CIK)),
+				slog.String("Key", key),
+			)
+			continue
 		}
 		filteredFacts = append(filteredFacts, factData)
 	}
@@ -84,6 +117,7 @@ func FilterDCF(ctx context.Context, cf *models.CompanyFactsResponse, logger *slo
 func findFact(
 	ctx context.Context,
 	d map[string]models.FactData,
+	sheet string,
 	key string,
 	tags []string,
 	logger *slog.Logger,
@@ -106,19 +140,20 @@ func findFact(
 			continue
 		}
 		if fact.Age() > 1 {
-			logger.LogAttrs(
-				ctx,
-				slog.LevelInfo,
-				"Fact skipped, age > 1",
-				slog.String("Key", key),
-				slog.String("Tag", tags[i]),
-				slog.Int("FY", fact.LastFY()),
-			)
+			//logger.LogAttrs(
+			//	ctx,
+			//	slog.LevelInfo,
+			//	"Fact skipped, age > 1",
+			//	slog.String("Key", key),
+			//	slog.String("Tag", tags[i]),
+			//	slog.Int("FY", fact.LastFY()),
+			//)
 			continue
 			//break
 		}
 
 		return &models.FilteredFact{
+			Sheet:    sheet,
 			Category: key,
 			Tag:      tags[i],
 			FactData: fact,

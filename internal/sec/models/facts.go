@@ -138,6 +138,7 @@ type UnitEntry struct {
 }
 
 type FilteredFact struct {
+	Sheet    string
 	Category string
 	Tag      string
 	FactData
