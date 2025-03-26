@@ -139,7 +139,7 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient *edga
 			)
 		}
 
-		facts := edgar.FilterDCF(ctx, res, logger)
+		facts := edgar.FilterBasicFinancials(ctx, res, logger)
 		for _, fact := range facts {
 			units, err := fact.LabelUnits()
 			if err != nil {
@@ -155,6 +155,7 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient *edga
 			for _, entry := range entries {
 				err = dbq.CreateFact(ctx, database.CreateFactParams{
 					Cik:          cik,
+					Statement:    fact.Statement,
 					Category:     fact.Category,
 					Tag:          fact.Tag,
 					Label:        fact.Label,

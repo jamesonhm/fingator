@@ -56,6 +56,8 @@ func (f *FactData) LastFY() int {
 	case "SHARES":
 		return findyr(f.Units.Shares)
 		//return f.Units.Shares[len(f.Units.Shares)-1].FiscalYear
+	case "USD/shares":
+		return findyr(f.Units.USDshares)
 	default:
 		return 0
 	}
@@ -68,6 +70,8 @@ func (f *FactData) LabelUnits() (string, error) {
 		return "PURE", nil
 	} else if len(f.Units.Shares) > 0 {
 		return "SHARES", nil
+	} else if len(f.Units.USDshares) > 0 {
+		return "USD/shares", nil
 	} else {
 		return "", fmt.Errorf("Unknow units for label `%s`", f.Label)
 	}
@@ -105,6 +109,13 @@ func (f *FactData) Filter() error {
 			return fmt.Errorf("All elements filtered out")
 		}
 		f.Units.Shares = ue
+	case "USD/shares":
+		ue = f.Units.USDshares
+		ue = slices.DeleteFunc(ue, delf)
+		if len(ue) == 0 {
+			return fmt.Errorf("All elements filtered out")
+		}
+		f.Units.USDshares = ue
 	}
 	return nil
 }
@@ -118,15 +129,18 @@ func (f *FactData) UnitEntries() []UnitEntry {
 		return f.Units.Pure
 	case "SHARES":
 		return f.Units.Shares
+	case "USD/shares":
+		return f.Units.USDshares
 	default:
 		return nil
 	}
 }
 
 type UnitData struct {
-	USD    []UnitEntry `json:"USD,omitempty"`
-	Pure   []UnitEntry `json:"pure,omitempty"`
-	Shares []UnitEntry `json:"shares,omitempty"`
+	USD       []UnitEntry `json:"USD,omitempty"`
+	Pure      []UnitEntry `json:"pure,omitempty"`
+	Shares    []UnitEntry `json:"shares,omitempty"`
+	USDshares []UnitEntry `json:"USD/shares,omitempty"`
 }
 
 type UnitEntry struct {
@@ -138,9 +152,9 @@ type UnitEntry struct {
 }
 
 type FilteredFact struct {
-	Sheet    string
-	Category string
-	Tag      string
+	Statement string
+	Category  string
+	Tag       string
 	FactData
 }
 

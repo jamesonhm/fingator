@@ -11,25 +11,28 @@ import (
 )
 
 const createFact = `-- name: CreateFact :exec
-INSERT INTO facts (cik, category, tag, label, description, units, end_d, value, fiscal_year, fiscal_period, form)
+INSERT INTO facts (
+    cik, 
+    statement,
+    category, 
+    tag, 
+    label, 
+    description, 
+    units, 
+    end_d, 
+    value, 
+    fiscal_year, 
+    fiscal_period, 
+    form
+)
 VALUES (
-    $1,
-    $2,
-    $3,
-    $4,
-    $5,
-    $6,
-    $7,
-    $8,
-    $9,
-    $10,
-    $11
-    )
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 ON CONFLICT ON CONSTRAINT facts_pkey DO NOTHING
 `
 
 type CreateFactParams struct {
 	Cik          int32
+	Statement    string
 	Category     string
 	Tag          string
 	Label        string
@@ -45,6 +48,7 @@ type CreateFactParams struct {
 func (q *Queries) CreateFact(ctx context.Context, arg CreateFactParams) error {
 	_, err := q.db.ExecContext(ctx, createFact,
 		arg.Cik,
+		arg.Statement,
 		arg.Category,
 		arg.Tag,
 		arg.Label,

@@ -9,7 +9,11 @@ import (
 	"github.com/jamesonhm/fingator/internal/sec/models"
 )
 
-func FilterDCF(ctx context.Context, cf *models.CompanyFactsResponse, logger *slog.Logger) []*models.FilteredFact {
+func FilterBasicFinancials(
+	ctx context.Context,
+	cf *models.CompanyFactsResponse,
+	logger *slog.Logger,
+) []*models.FilteredFact {
 	var cashFlowTags = map[string][]string{
 		"NetIncome": {"NetIncomeLoss", "ProfitLoss", "NetIncomeLossAvailableToCommonStockholdersBasic"},
 		"DandA": {
@@ -41,18 +45,13 @@ func FilterDCF(ctx context.Context, cf *models.CompanyFactsResponse, logger *slo
 		},
 	}
 	var incomeTags = map[string][]string{
-		"EBIT": {
-			"OperatingIncomeLoss",
-		},
 		"Revenue": {
 			"Revenues",
 			"RevenueFromContractWithCustomerExcludingAssessedTax",
-			"SalesRevenueNet",
-			"SalesRevenueGoodsNet",
-			"SalesRevenueServicesNet",
-			"SalesRevenueEnergyServices",
-			"OperatingLeasesIncomeStatementLeaseRevenue",
-			"SalesTypeLeaseRevenue"},
+		},
+		"EBIT": {
+			"OperatingIncomeLoss",
+		},
 		"TaxExpense": {
 			"IncomeTaxExpenseBenefit",
 		},
@@ -66,6 +65,7 @@ func FilterDCF(ctx context.Context, cf *models.CompanyFactsResponse, logger *slo
 	var balanceTags = map[string][]string{
 		"CurrentAssets":      {"AssetsCurrent"},
 		"CurrentLiabilities": {"LiabilitiesCurrent"},
+		"ShareholderEquity":  {"StockholdersEquity"},
 	}
 
 	var filteredFacts []*models.FilteredFact
@@ -117,7 +117,7 @@ func FilterDCF(ctx context.Context, cf *models.CompanyFactsResponse, logger *slo
 func findFact(
 	ctx context.Context,
 	d map[string]models.FactData,
-	sheet string,
+	stmnt string,
 	key string,
 	tags []string,
 	logger *slog.Logger,
@@ -149,14 +149,13 @@ func findFact(
 			//	slog.Int("FY", fact.LastFY()),
 			//)
 			continue
-			//break
 		}
 
 		return &models.FilteredFact{
-			Sheet:    sheet,
-			Category: key,
-			Tag:      tags[i],
-			FactData: fact,
+			Statement: stmnt,
+			Category:  key,
+			Tag:       tags[i],
+			FactData:  fact,
 		}, nil
 	}
 	return nil, fmt.Errorf("\tNo fact found for %s", key)

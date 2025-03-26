@@ -34,7 +34,7 @@ func setup(ctx context.Context, db *sql.DB, logger *slog.Logger) error {
 		break
 	}
 
-	_, err = provider.DownTo(ctx, 4)
+	_, err = provider.DownTo(ctx, 1)
 	if err != nil {
 		return err
 	}

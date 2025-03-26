@@ -26,6 +26,7 @@ type Cusip struct {
 
 type Fact struct {
 	Cik          int32
+	Statement    string
 	Category     string
 	Tag          string
 	Label        string

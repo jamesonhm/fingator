@@ -1,6 +1,7 @@
 -- +goose Up
 CREATE TABLE facts (
     cik INTEGER NOT NULL,
+    statement TEXT NOT NULL,
     category TEXT NOT NULL,
     tag TEXT NOT NULL,
     label TEXT NOT NULL,
