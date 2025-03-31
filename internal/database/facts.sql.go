@@ -10,6 +10,61 @@ import (
 	"time"
 )
 
+const companyFacts = `-- name: CompanyFacts :many
+SELECT cik,
+    statement,
+    category,
+    tag,
+    label,
+    description,
+    units,
+    end_d,
+    value,
+    fiscal_year,
+    fiscal_period,
+    form
+FROM facts
+WHERE cik = $1
+AND form = '10-K'
+ORDER BY end_d, statement
+`
+
+func (q *Queries) CompanyFacts(ctx context.Context, cik int32) ([]Fact, error) {
+	rows, err := q.db.QueryContext(ctx, companyFacts, cik)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Fact
+	for rows.Next() {
+		var i Fact
+		if err := rows.Scan(
+			&i.Cik,
+			&i.Statement,
+			&i.Category,
+			&i.Tag,
+			&i.Label,
+			&i.Description,
+			&i.Units,
+			&i.EndD,
+			&i.Value,
+			&i.FiscalYear,
+			&i.FiscalPeriod,
+			&i.Form,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createFact = `-- name: CreateFact :exec
 INSERT INTO facts (
     cik, 
