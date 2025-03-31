@@ -22,7 +22,10 @@ func FilterBasicFinancials(
 			"DepreciationAmortizationAndAccretionNet",
 		},
 		"Depreciation": {"Depreciation"},
-		"Amortization": {"Amortization"},
+		"Amortization": {
+			"Amortization",
+			"AmortizationOfIntangiableAssets",
+		},
 		"NetCashOps": {
 			"NetCashProvidedByUsedInOperatingActivities",
 			"NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",

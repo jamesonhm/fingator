@@ -92,13 +92,9 @@ func runEdgar10k(
 				logger.LogAttrs(ctx, slog.LevelError, "error getting 10k URL", slog.Any("Error", err))
 			}
 			fmt.Println(link)
-			r, err := edgarClient.Fetch10k(ctx, link)
+			_, err = edgarClient.Fetch10k(ctx, link)
 			if err != nil {
 				logger.LogAttrs(ctx, slog.LevelError, "error getting 10k", slog.Any("Error", err))
-			}
-			err = process10k(r)
-			if err != nil {
-				logger.LogAttrs(ctx, slog.LevelError, "error processing 10k", slog.Any("Error", err))
 			}
 			break
 		}

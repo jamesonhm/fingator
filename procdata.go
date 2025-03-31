@@ -8,23 +8,6 @@ import (
 	"github.com/jamesonhm/fingator/internal/models"
 )
 
-type LineItem struct {
-	Tag     string
-	Label   string
-	Desc    string
-	Units   string
-	Value   float64
-	EndDate time.Time
-}
-
-type Statement struct {
-	CIK        int32
-	FiscalYear int
-	Income     map[string]LineItem
-	Balance    map[string]LineItem
-	CashFlow   map[string]LineItem
-}
-
 func annualStatements(
 	ctx context.Context,
 	dbq *database.Queries,
@@ -33,6 +16,7 @@ func annualStatements(
 ) ([]*models.Statement, error) {
 	var stmts []*models.Statement
 	var currStmt *models.Statement
+	var val models.ValueHolder
 
 	data, err := dbq.CompanyFacts(ctx, cik)
 	if err != nil {
@@ -44,31 +28,28 @@ func annualStatements(
 			currStmt := models.NewStatement(cik, line.EndD)
 			stmts = append(stmts, currStmt)
 		}
+		switch line.Units {
+		case "USD":
+			val = models.USDFromStr(line.Value)
+		case "USD/shares":
+			val = models.USDFromStr(line.Value)
+		case "SHARES":
+			val = models.SharesFromStr(line.Value)
+		}
+		li := models.LineItem{
+			Tag:   line.Tag,
+			Label: line.Label,
+			Desc:  line.Description,
+			Units: line.Units,
+			Value: val,
+		}
 		switch line.Statement {
 		case "Income":
-			currStmt.Income[line.Category] = models.LineItem{
-				Tag:   line.Tag,
-				Label: line.Label,
-				Desc:  line.Description,
-				Units: line.Units,
-				Value: line.Value,
-			}
+			currStmt.Income[line.Category] = li
 		case "Balance":
-			currStmt.Balance[line.Category] = models.LineItem{
-				Tag:   line.Tag,
-				Label: line.Label,
-				Desc:  line.Description,
-				Units: line.Units,
-				Value: line.Value,
-			}
+			currStmt.Balance[line.Category] = li
 		case "CashFlow":
-			currStmt.CashFlow[line.Category] = models.LineItem{
-				Tag:   line.Tag,
-				Label: line.Label,
-				Desc:  line.Description,
-				Units: line.Units,
-				Value: line.Value,
-			}
+			currStmt.CashFlow[line.Category] = li
 		}
 	}
 	return stmts, nil
