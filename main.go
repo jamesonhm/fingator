@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"fmt"
-
 	//"fmt"
 	//	"io"
 	"log/slog"
@@ -92,19 +90,11 @@ func main() {
 		gocron.WithEventListeners(
 			gocron.AfterJobRuns(
 				func(jobID uuid.UUID, jobName string) {
-					runEdgarFacts(ctx, dbq, edgarClient, logger)
+					runEdgarFactsHist(ctx, dbq, edgarClient, logger)
 				},
 			),
 		),
 	)
-
-	stmts, err := annualStatements(ctx, dbq, logger, 320193)
-	if err != nil {
-		fmt.Printf("%v\n", err)
-	}
-	for _, stmt := range stmts {
-		fmt.Printf("%+v\n\n", stmt)
-	}
 
 	// OHLCV from polygon, weekday-ly
 	// TODO: update to CronJob running after close of weekdays

@@ -42,12 +42,15 @@ func (s Shares) Float64() float64 {
 	return float64(s)
 }
 
-type LineItem struct {
-	Tag   string
-	Label string
-	Desc  string
-	Units string
-	Value ValueHolder
+func NewStatement(cik int32, endd time.Time) *Statement {
+	return &Statement{
+		CIK:      cik,
+		EndDate:  endd,
+		Income:   make(map[string]LineItem),
+		Balance:  make(map[string]LineItem),
+		CashFlow: make(map[string]LineItem),
+		Calc:     StmtCalc{},
+	}
 }
 
 type Statement struct {
@@ -56,14 +59,27 @@ type Statement struct {
 	Income   map[string]LineItem
 	Balance  map[string]LineItem
 	CashFlow map[string]LineItem
+	Calc     StmtCalc
 }
 
-func NewStatement(cik int32, endd time.Time) *Statement {
-	return &Statement{
-		CIK:      cik,
-		EndDate:  endd,
-		Income:   make(map[string]LineItem),
-		Balance:  make(map[string]LineItem),
-		CashFlow: make(map[string]LineItem),
-	}
+type LineItem struct {
+	Tag   string
+	Label string
+	Desc  string
+	Units string
+	Value ValueHolder
+}
+
+func (li LineItem) String() string {
+	return fmt.Sprintf(
+		"Tag: %s, Label: %s, Desc: %s...%s, Units: %s, Value: %v",
+		li.Tag, li.Label, li.Desc[0:10], li.Desc[len(li.Desc)-11:len(li.Desc)], li.Units, li.Value,
+	)
+}
+
+type StmtCalc struct {
+	TaxRate      *float64
+	NWC          *float64
+	FCF          *float64
+	AnnualGrowth *float64
 }

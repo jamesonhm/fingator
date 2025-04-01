@@ -33,4 +33,5 @@ SELECT cik,
 FROM facts
 WHERE cik = $1
 AND form = '10-K'
+AND end_d > current_date - interval '5' year
 ORDER BY end_d, statement;

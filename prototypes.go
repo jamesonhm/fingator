@@ -102,8 +102,8 @@ func runEdgar10k(
 	}
 }
 
-func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient *edgar.Client, logger *slog.Logger) {
-	logger.LogAttrs(ctx, slog.LevelInfo, "Edgar Facts Started")
+func runEdgarFactsHist(ctx context.Context, dbq *database.Queries, edgarClient *edgar.Client, logger *slog.Logger) {
+	logger.LogAttrs(ctx, slog.LevelInfo, "Edgar Historical Facts Started")
 	// TODO: Uncomment next 9 lines in prod
 	//ciks, err := dbq.GetExchangeCiks(ctx)
 	//if err != nil {
@@ -175,7 +175,21 @@ func runEdgarFacts(ctx context.Context, dbq *database.Queries, edgarClient *edga
 			}
 		}
 	}
-	logger.LogAttrs(ctx, slog.LevelInfo, "Edgar Facts Complete")
+
+	logger.LogAttrs(ctx, slog.LevelInfo, "Edgar Historical Facts Download Complete, Process Starting")
+	for _, cik := range ciks {
+		stmts, err := annualStatements(ctx, dbq, logger, cik)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+		}
+		calcTaxRate(ctx, stmts, logger)
+		for _, stmt := range stmts {
+			fmt.Printf("%+v\n\n", stmt)
+		}
+		break
+	}
+
+	logger.LogAttrs(ctx, slog.LevelInfo, "Edgar Historical Facts Complete")
 }
 
 func runEdgarFilings(
