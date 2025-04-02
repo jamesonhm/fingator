@@ -44,28 +44,49 @@ func (s Shares) Float64() float64 {
 
 func NewStatement(cik int32, endd time.Time) *Statement {
 	return &Statement{
-		CIK:      cik,
-		EndDate:  endd,
-		Income:   make(map[string]LineItem),
-		Balance:  make(map[string]LineItem),
-		CashFlow: make(map[string]LineItem),
-		Calc:     StmtCalc{},
+		CIK:     cik,
+		EndDate: endd,
+		//Income:   make(map[string]LineItem),
+		//Balance:  make(map[string]LineItem),
+		//CashFlow: make(map[string]LineItem),
+		//Calc:     StmtCalc{},
 	}
 }
 
 type Statement struct {
-	CIK      int32
-	EndDate  time.Time
-	Income   map[string]LineItem
-	Balance  map[string]LineItem
-	CashFlow map[string]LineItem
-	Calc     StmtCalc
+	CIK                int32
+	EndDate            time.Time
+	NetIncome          *LineItem
+	DandA              *LineItem
+	Depreciation       *LineItem
+	Amortization       *LineItem
+	NetCashOps         *LineItem
+	CapEx              *LineItem
+	DebtIssuance       *LineItem
+	DebtRepayment      *LineItem
+	Revenue            *LineItem
+	EBIT               *LineItem
+	TaxExpense         *LineItem
+	PreTaxIncome       *LineItem
+	EPS                *LineItem
+	Shares             *LineItem
+	CurrentAssets      *LineItem
+	CurrentLiabilities *LineItem
+	ShareholderEquity  *LineItem
+	//Income             map[string]LineItem
+	//Balance            map[string]LineItem
+	//CashFlow           map[string]LineItem
+	TaxRate      *float64
+	NWC          *float64
+	FCF          *float64
+	AnnualGrowth *float64
 }
 
 type LineItem struct {
 	Tag   string
 	Label string
 	Desc  string
+	Sheet string
 	Units string
 	Value ValueHolder
 }
@@ -77,9 +98,27 @@ func (li LineItem) String() string {
 	)
 }
 
-type StmtCalc struct {
-	TaxRate      *float64
-	NWC          *float64
-	FCF          *float64
-	AnnualGrowth *float64
+func (s *Statement) CalcTaxRate() {
+	if s.PreTaxIncome == nil || s.TaxExpense == nil {
+
+	}
+	tr := s.TaxExpense.Value.Float64() / s.PreTaxIncome.Value.Float64()
+	s.TaxRate = &tr
 }
+
+//// FCF = EBIT x (1- tax rate) + D&A + NWC – Capital expenditures
+//func annualFCF(stmts []*models.Statement, logger *slog.Logger) {
+//	var fcfs []float64
+//	for i, stmt := range stmts {
+//		fcf := stmt.Income["EBIT"]*(1-stmt.Calc.TaxRate) + stmt.CashFlow["DandA"] + stmt.Calc.NWC - stmt.CashFlow["CapEx"]
+//	}
+//}
+//func annualGrowth(stmts []*models.Statement, logger *slog.Logger) {
+//	var annualGrowth []float64
+//	for i, stmt := range stmts {
+//		if i == 0 {
+//			continue
+//		}
+//
+//	}
+//}
