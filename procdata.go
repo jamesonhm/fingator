@@ -39,10 +39,11 @@ func annualStatements(
 		case "SHARES":
 			val = models.SharesFromStr(line.Value)
 		}
-		li := models.LineItem{
+		li := &models.LineItem{
 			Tag:   line.Tag,
 			Label: line.Label,
 			Desc:  line.Description,
+			Sheet: line.Statement,
 			Units: line.Units,
 			Value: val,
 		}
@@ -84,4 +85,14 @@ func annualStatements(
 		}
 	}
 	return stmts, nil
+}
+
+func stmtInternals(stmts []*models.Statement) error {
+	for _, stmt := range stmts {
+		err := stmt.InternalCalcs(models.CalcTaxRate())
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

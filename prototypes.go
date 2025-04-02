@@ -182,9 +182,13 @@ func runEdgarFactsHist(ctx context.Context, dbq *database.Queries, edgarClient *
 		if err != nil {
 			fmt.Printf("%v\n", err)
 		}
-		calcTaxRate(ctx, stmts, logger)
+
+		err = stmtInternals(stmts)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+		}
 		for _, stmt := range stmts {
-			fmt.Printf("%+v\n\n", stmt)
+			fmt.Printf("%v\n", stmt)
 		}
 		break
 	}
