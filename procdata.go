@@ -89,7 +89,10 @@ func annualStatements(
 
 func stmtInternals(stmts []*models.Statement) error {
 	for _, stmt := range stmts {
-		err := stmt.InternalCalcs(models.CalcTaxRate())
+		err := stmt.InternalCalcs(
+			models.CalcTaxRate(),
+			models.CalcNWC(),
+		)
 		if err != nil {
 			return err
 		}

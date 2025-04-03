@@ -69,6 +69,7 @@ func FilterBasicFinancials(
 	}
 	var balanceTags = map[string][]string{
 		"CurrentAssets":      {"AssetsCurrent"},
+		"CashEquivalents":    {"CashCashEquivalentsAndShortTermInvestments"},
 		"CurrentLiabilities": {"LiabilitiesCurrent"},
 		"ShareholderEquity":  {"StockholdersEquity"},
 	}

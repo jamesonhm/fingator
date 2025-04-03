@@ -42,6 +42,7 @@ type Statement struct {
 	//CashFlow           map[string]LineItem
 	TaxRate      *float64
 	NWC          *float64
+	DeltaNWC     *float64
 	FCF          *float64
 	AnnualGrowth *float64
 }
@@ -49,8 +50,10 @@ type Statement struct {
 func (s *Statement) String() string {
 	var res string
 	res += fmt.Sprintf("%d\n", s.CIK)
-	res += fmt.Sprintf("%-12s|%16s|%10s|\n", s.EndDate.Format("2006/01/02"), "NetIncome", "TaxRate")
-	res += fmt.Sprintf("%12s|%16.0f|%10.2f|\n", " ", s.NetIncome.Value.Float64(), floatNilCheck(s.TaxRate))
+	res += fmt.Sprintf("%-12s\n", s.EndDate.Format("2006/01/02"))
+	res += fmt.Sprintf("|%16s|%16.0f|\n", "NetIncome", s.NetIncome.Value.Float64())
+	res += fmt.Sprintf("|%16s|%16.2f|\n", "TaxRate", floatNilCheck(s.TaxRate))
+	res += fmt.Sprintf("|%16s|%16.2f|\n", "NWC", floatNilCheck(s.NWC))
 	return res
 }
 
@@ -135,6 +138,28 @@ func CalcTaxRate() CalcOption {
 		s.TaxRate = &tr
 		return s, nil
 	}
+}
+
+func CalcNWC() CalcOption {
+	return func(s *Statement) (*Statement, error) {
+		if s.CurrentAssets == nil || s.CurrentLiabilities == nil {
+			return s, fmt.Errorf("Missing NWC Param - Assets: %s, Liabilities: %s", s.CurrentAssets.Value.StringValue(), s.CurrentLiabilities.Value.StringValue())
+		}
+		nwc := s.CurrentAssets.Value.Float64() - s.CurrentLiabilities.Value.Float64()
+		s.NWC = &nwc
+		return s, nil
+	}
+}
+
+func CalcDeltaNWC(prevStmt *Statement) CalcOption {
+	return func(s *Statement) (*Statement, error) {
+		if prevStmt.NWC == nil {
+			return s, nil
+		}
+		if s.NWC == nil {
+			return s, fmt.Errorf("Current Statement Missing NWC - %.2f", s.NWC)
+		}
+		deltaNWC := 0.0
 }
 
 //// FCF = EBIT x (1- tax rate) + D&A + NWC – Capital expenditures
