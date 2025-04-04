@@ -68,10 +68,38 @@ func FilterBasicFinancials(
 		"Shares": {"WeightedAverageNumberOfSharesOutstandingBasic"},
 	}
 	var balanceTags = map[string][]string{
-		"CurrentAssets":      {"AssetsCurrent"},
-		"CashEquivalents":    {"CashCashEquivalentsAndShortTermInvestments"},
-		"CurrentLiabilities": {"LiabilitiesCurrent"},
-		"ShareholderEquity":  {"StockholdersEquity"},
+		"TotalCurrentAssets": {"AssetsCurrent"},
+		"CashEquivalents": {
+			"CashAndCashEquivalentsAtCarryingValue",
+			"CashCashEquivalentsAndShortTermInvestments",
+		},
+		"OtherNonOpAssets": {
+			"MarketableSecuritiesCurrent",
+			"RestrictedCashAndCashEquivalentsAtCarryingValue",
+			"ShortTermInvestments",
+		},
+		"AccountsReceivable": {
+			"AccountsReceivableNetCurrent",
+		},
+		"Inventory": {
+			"InventoryNet",
+			"InventoryRawMaterialsAndSuppliesNetOfReserves",
+		},
+		"OtherOpAssets": {
+			"PrepaidExpenseAndOtherAssetsCurrent",
+			"OtherAssetsCurrent",
+		},
+		"TotalCurrentLiabilities": {"LiabilitiesCurrent"},
+		"AccountsPayable": {
+			"AccountsPayableCurrent",
+			"AccountsPayableAndAccruedLiabilitiesCurrent",
+			"AccountsPayableTradeCurrent",
+		},
+		"OtherOpLiabilities": {
+			"OtherLiabilitiesCurrent",
+			"AccruedLiabilitiesCurrent",
+		},
+		"ShareholderEquity": {"StockholdersEquity"},
 	}
 
 	var filteredFacts []*models.FilteredFact
@@ -165,4 +193,36 @@ func findFact(
 		}, nil
 	}
 	return nil, fmt.Errorf("\tNo fact found for %s", key)
+}
+
+func findAllFact(
+	ctx context.Context,
+	d map[string]models.FactData,
+	stmnt string,
+	key string,
+	tags []string,
+	logger *slog.Logger,
+) []*models.FilteredFact {
+	var foundFacts []*models.FilteredFact
+	for i := 0; i < len(tags); i++ {
+		fact, ok := d[tags[i]]
+		if !ok {
+			continue
+		}
+		err := fact.Filter()
+		if err != nil {
+			continue
+		}
+		if fact.Age() > 1 {
+			continue
+		}
+
+		foundFacts = append(foundFacts, &models.FilteredFact{
+			Statement: stmnt,
+			Category:  key,
+			Tag:       tags[i],
+			FactData:  fact,
+		})
+	}
+	return foundFacts
 }

@@ -18,33 +18,37 @@ func NewStatement(cik int32, endd time.Time) *Statement {
 }
 
 type Statement struct {
-	CIK                int32
-	EndDate            time.Time
-	NetIncome          *LineItem
-	DandA              *LineItem
-	Depreciation       *LineItem
-	Amortization       *LineItem
-	NetCashOps         *LineItem
-	CapEx              *LineItem
-	DebtIssuance       *LineItem
-	DebtRepayment      *LineItem
-	Revenue            *LineItem
-	EBIT               *LineItem
-	TaxExpense         *LineItem
-	PreTaxIncome       *LineItem
-	EPS                *LineItem
-	Shares             *LineItem
-	CurrentAssets      *LineItem
-	CurrentLiabilities *LineItem
-	ShareholderEquity  *LineItem
-	//Income             map[string]LineItem
-	//Balance            map[string]LineItem
-	//CashFlow           map[string]LineItem
-	TaxRate      *float64
-	NWC          *float64
-	DeltaNWC     *float64
-	FCF          *float64
-	AnnualGrowth *float64
+	CIK                     int32
+	EndDate                 time.Time
+	NetIncome               *LineItem
+	DandA                   *LineItem
+	Depreciation            *LineItem
+	Amortization            *LineItem
+	NetCashOps              *LineItem
+	CapEx                   *LineItem
+	DebtIssuance            *LineItem
+	DebtRepayment           *LineItem
+	Revenue                 *LineItem
+	EBIT                    *LineItem
+	TaxExpense              *LineItem
+	PreTaxIncome            *LineItem
+	EPS                     *LineItem
+	Shares                  *LineItem
+	TotalCurrentAssets      *LineItem
+	CashEquivalents         *LineItem
+	OtherNonOpAssets        *LineItem
+	AccountsReceivable      *LineItem
+	Inventory               *LineItem
+	OtherOpAssets           *LineItem
+	TotalCurrentLiabilities *LineItem
+	AccountsPayable         *LineItem
+	OtherOpLiabilities      *LineItem
+	ShareholderEquity       *LineItem
+	TaxRate                 *float64
+	BalanceNWC              *float64
+	DeltaNWC                *float64
+	FCF                     *float64
+	AnnualGrowth            *float64
 }
 
 func (s *Statement) String() string {
@@ -53,7 +57,13 @@ func (s *Statement) String() string {
 	res += fmt.Sprintf("%-12s\n", s.EndDate.Format("2006/01/02"))
 	res += fmt.Sprintf("|%16s|%16.0f|\n", "NetIncome", s.NetIncome.Value.Float64())
 	res += fmt.Sprintf("|%16s|%16.2f|\n", "TaxRate", floatNilCheck(s.TaxRate))
-	res += fmt.Sprintf("|%16s|%16.2f|\n", "NWC", floatNilCheck(s.NWC))
+	res += fmt.Sprintf("|%16s|%16.0f|\n", "CurrAssets", s.TotalCurrentAssets.Value.Float64())
+	res += fmt.Sprintf("|%16s|%16.0f|\n", "CashEquiv", s.CashEquivalents.Value.Float64())
+	res += fmt.Sprintf("|%16s|%16.0f|\n", "OtherNonOpAssets", s.OtherNonOpAssets.Value.Float64())
+	res += fmt.Sprintf("|%16s|%16.0f|\n", "AccountsPayable", s.AccountsPayable.Value.Float64())
+	res += fmt.Sprintf("|%16s|%16.0f|\n", "OtherOpLiab.", s.OtherOpLiabilities.Value.Float64())
+	res += fmt.Sprintf("|%16s|%16.0f|\n", "NWC", floatNilCheck(s.BalanceNWC))
+	res += fmt.Sprintf("|%16s|%16.0f|\n", "ChangeNWC", floatNilCheck(s.DeltaNWC))
 	return res
 }
 
@@ -61,10 +71,10 @@ func floatNilCheck(f *float64) float64 {
 	if f != nil {
 		return *f
 	}
-	return -999
+	return 0
 }
 
-func (s *Statement) InternalCalcs(opts ...CalcOption) error {
+func (s *Statement) Calcs(opts ...CalcOption) error {
 	var err error = nil
 	for _, opt := range opts {
 		s, err = opt(s)
@@ -140,26 +150,44 @@ func CalcTaxRate() CalcOption {
 	}
 }
 
-func CalcNWC() CalcOption {
+func CalcBalanceNWC() CalcOption {
 	return func(s *Statement) (*Statement, error) {
-		if s.CurrentAssets == nil || s.CurrentLiabilities == nil {
-			return s, fmt.Errorf("Missing NWC Param - Assets: %s, Liabilities: %s", s.CurrentAssets.Value.StringValue(), s.CurrentLiabilities.Value.StringValue())
+		if s.TotalCurrentAssets == nil || s.AccountsPayable == nil {
+			return s, fmt.Errorf(
+				"Missing NWC Param - Assets: %s, Liabilities: %s",
+				s.TotalCurrentAssets.Value.StringValue(),
+				s.AccountsPayable.Value.StringValue(),
+			)
 		}
-		nwc := s.CurrentAssets.Value.Float64() - s.CurrentLiabilities.Value.Float64()
-		s.NWC = &nwc
+		opassets := s.TotalCurrentAssets.Value.Float64()
+		if s.CashEquivalents != nil {
+			opassets -= s.CashEquivalents.Value.Float64()
+		}
+		if s.OtherNonOpAssets != nil {
+			opassets -= s.OtherNonOpAssets.Value.Float64()
+		}
+		opliab := s.AccountsPayable.Value.Float64()
+		if s.OtherOpLiabilities != nil {
+			opliab += s.OtherOpLiabilities.Value.Float64()
+		}
+		nwc := opassets - opliab
+		s.BalanceNWC = &nwc
 		return s, nil
 	}
 }
 
 func CalcDeltaNWC(prevStmt *Statement) CalcOption {
 	return func(s *Statement) (*Statement, error) {
-		if prevStmt.NWC == nil {
+		if prevStmt.BalanceNWC == nil {
 			return s, nil
 		}
-		if s.NWC == nil {
-			return s, fmt.Errorf("Current Statement Missing NWC - %.2f", s.NWC)
+		if s.BalanceNWC == nil {
+			return s, fmt.Errorf("Current Statement Missing NWC - %.2f", *s.BalanceNWC)
 		}
-		deltaNWC := 0.0
+		deltaNWC := *prevStmt.BalanceNWC - *s.BalanceNWC
+		s.DeltaNWC = &deltaNWC
+		return s, nil
+	}
 }
 
 //// FCF = EBIT x (1- tax rate) + D&A + NWC – Capital expenditures

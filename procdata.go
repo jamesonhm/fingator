@@ -76,10 +76,24 @@ func annualStatements(
 			currStmt.EPS = li
 		case "Shares":
 			currStmt.Shares = li
-		case "CurrentAssets":
-			currStmt.CurrentAssets = li
-		case "CurrentLiabilities":
-			currStmt.CurrentLiabilities = li
+		case "TotalCurrentAssets":
+			currStmt.TotalCurrentAssets = li
+		case "CashEquivalents":
+			currStmt.CashEquivalents = li
+		case "OtherNonOpAssets":
+			currStmt.OtherNonOpAssets = li
+		case "AccountsReceivable":
+			currStmt.AccountsReceivable = li
+		case "Inventory":
+			currStmt.Inventory = li
+		case "OtherOpAssets":
+			currStmt.OtherOpAssets = li
+		case "TotalCurrentLiabilities":
+			currStmt.TotalCurrentLiabilities = li
+		case "AccountsPayable":
+			currStmt.AccountsPayable = li
+		case "OtherOpLiabilities":
+			currStmt.OtherOpLiabilities = li
 		case "ShareholderEquity":
 			currStmt.ShareholderEquity = li
 		}
@@ -89,9 +103,24 @@ func annualStatements(
 
 func stmtInternals(stmts []*models.Statement) error {
 	for _, stmt := range stmts {
-		err := stmt.InternalCalcs(
+		err := stmt.Calcs(
 			models.CalcTaxRate(),
-			models.CalcNWC(),
+			models.CalcBalanceNWC(),
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func stmtCrossCalcs(stmts []*models.Statement) error {
+	for i, stmt := range stmts {
+		if i == 0 {
+			continue
+		}
+		err := stmt.Calcs(
+			models.CalcDeltaNWC(stmts[i-1]),
 		)
 		if err != nil {
 			return err
