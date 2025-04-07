@@ -78,22 +78,32 @@ func annualStatements(
 			currStmt.Shares = li
 		case "TotalCurrentAssets":
 			currStmt.TotalCurrentAssets = li
-		case "CashEquivalents":
-			currStmt.CashEquivalents = li
-		case "OtherNonOpAssets":
-			currStmt.OtherNonOpAssets = li
-		case "AccountsReceivable":
-			currStmt.AccountsReceivable = li
-		case "Inventory":
-			currStmt.Inventory = li
-		case "OtherOpAssets":
-			currStmt.OtherOpAssets = li
+		case "OpAssets":
+			if currStmt.OpAssets == nil {
+				currStmt.OpAssets = li
+			} else {
+				currStmt.OpAssets.AddLine(li)
+			}
+		case "NonOpAssets":
+			if currStmt.NonOpAssets == nil {
+				currStmt.NonOpAssets = li
+			} else {
+				currStmt.NonOpAssets.AddLine(li)
+			}
 		case "TotalCurrentLiabilities":
 			currStmt.TotalCurrentLiabilities = li
-		case "AccountsPayable":
-			currStmt.AccountsPayable = li
-		case "OtherOpLiabilities":
-			currStmt.OtherOpLiabilities = li
+		case "OpLiabilities":
+			if currStmt.OpLiabilities == nil {
+				currStmt.OpLiabilities = li
+			} else {
+				currStmt.OpLiabilities.AddLine(li)
+			}
+		case "NonOpLiabilities":
+			if currStmt.NonOpLiabilities == nil {
+				currStmt.NonOpLiabilities = li
+			} else {
+				currStmt.NonOpLiabilities.AddLine(li)
+			}
 		case "ShareholderEquity":
 			currStmt.ShareholderEquity = li
 		}

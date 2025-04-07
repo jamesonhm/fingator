@@ -68,38 +68,51 @@ func FilterBasicFinancials(
 		"Shares": {"WeightedAverageNumberOfSharesOutstandingBasic"},
 	}
 	var balanceTags = map[string][]string{
-		"TotalCurrentAssets": {"AssetsCurrent"},
-		"CashEquivalents": {
+		"TotalCurrentAssets":      {"AssetsCurrent"},
+		"TotalCurrentLiabilities": {"LiabilitiesCurrent"},
+		"ShareholderEquity":       {"StockholdersEquity"},
+	}
+	var aggBalanceTags = map[string][]string{
+		"NonOpAssets": {
 			"CashAndCashEquivalentsAtCarryingValue",
 			"CashCashEquivalentsAndShortTermInvestments",
-		},
-		"OtherNonOpAssets": {
 			"MarketableSecuritiesCurrent",
 			"RestrictedCashAndCashEquivalentsAtCarryingValue",
 			"ShortTermInvestments",
+			"DerivativeAssetsCurrent",
 		},
-		"AccountsReceivable": {
+		"OpAssets": {
 			"AccountsReceivableNetCurrent",
-		},
-		"Inventory": {
 			"InventoryNet",
 			"InventoryRawMaterialsAndSuppliesNetOfReserves",
-		},
-		"OtherOpAssets": {
 			"PrepaidExpenseAndOtherAssetsCurrent",
+			"NontradeReceivablesCurrent",
+			"OtherReceivablesNetCurrent",
 			"OtherAssetsCurrent",
+			"EnergyRelatedInventoryNaturalGasInStorage",
+			"InventoryRawMaterialsAndSuppliesNetOfReserves",
+			"RenewableEnergyCreditsCurrent",
 		},
-		"TotalCurrentLiabilities": {"LiabilitiesCurrent"},
-		"AccountsPayable": {
+		"OpLiabilities": {
 			"AccountsPayableCurrent",
 			"AccountsPayableAndAccruedLiabilitiesCurrent",
 			"AccountsPayableTradeCurrent",
-		},
-		"OtherOpLiabilities": {
 			"OtherLiabilitiesCurrent",
 			"AccruedLiabilitiesCurrent",
+			"EmployeeRelatedLiabilitiesCurrent",
+			"AccruedIncomeTaxesCurrent",
+			"ContractWithCustomerLiabilityCurrent",
+			"OtherLiabilitiesCurrent",
+			"EnergyMarketingAccountsPayable",
+			"OperatingLeaseLiabilityCurrent",
 		},
-		"ShareholderEquity": {"StockholdersEquity"},
+		"NonOpLiabilities": {
+			"CommercialPaper",
+			"LongTermDebtCurrent",
+			"ShortTermBorrowings",
+			"LongTermDebtAndCapitalLeaseObligationsCurrent",
+			"DerivativeLiabilitiesCurrent",
+		},
 	}
 
 	var filteredFacts []*models.FilteredFact
@@ -144,6 +157,12 @@ func FilterBasicFinancials(
 			continue
 		}
 		filteredFacts = append(filteredFacts, factData)
+	}
+	for key, tags := range aggBalanceTags {
+		for _, foundFact := range findAllFact(ctx, cf.Facts.USGAAP, "Balance", key, tags, logger) {
+			fmt.Printf("aggBalanceTags Fact: %v\n", foundFact)
+			filteredFacts = append(filteredFacts, foundFact)
+		}
 	}
 	return filteredFacts
 }
