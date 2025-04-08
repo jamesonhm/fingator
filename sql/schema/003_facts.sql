@@ -12,7 +12,7 @@ CREATE TABLE facts (
     fiscal_year INTEGER NOT NULL,
     fiscal_period TEXT NOT NULL,
     form TEXT NOT NULL,
-    CONSTRAINT facts_pkey PRIMARY KEY (cik, category, end_d)
+    CONSTRAINT facts_pkey PRIMARY KEY (cik, tag, end_d)
 );
 
 -- +goose Down

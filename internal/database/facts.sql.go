@@ -67,7 +67,7 @@ func (q *Queries) CompanyFacts(ctx context.Context, cik int32) ([]Fact, error) {
 }
 
 const createFact = `-- name: CreateFact :exec
-INSERT INTO facts (
+INSERT INTO facts AS f(
     cik, 
     statement,
     category, 

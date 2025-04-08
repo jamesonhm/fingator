@@ -114,6 +114,16 @@ func FilterBasicFinancials(
 			"DerivativeLiabilitiesCurrent",
 		},
 	}
+	var aggCashFlowTags = map[string][]string{
+		"CFChangeNWC": {
+			"CashAndCashEquivalentsAtCarryingValue",
+			"CashCashEquivalentsAndShortTermInvestments",
+			"MarketableSecuritiesCurrent",
+			"RestrictedCashAndCashEquivalentsAtCarryingValue",
+			"ShortTermInvestments",
+			"DerivativeAssetsCurrent",
+		},
+	}
 
 	var filteredFacts []*models.FilteredFact
 	for key, tags := range cashFlowTags {
@@ -160,7 +170,6 @@ func FilterBasicFinancials(
 	}
 	for key, tags := range aggBalanceTags {
 		for _, foundFact := range findAllFact(ctx, cf.Facts.USGAAP, "Balance", key, tags, logger) {
-			fmt.Printf("aggBalanceTags Fact: %v\n", foundFact)
 			filteredFacts = append(filteredFacts, foundFact)
 		}
 	}

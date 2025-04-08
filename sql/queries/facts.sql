@@ -1,5 +1,5 @@
 -- name: CreateFact :exec
-INSERT INTO facts (
+INSERT INTO facts AS f(
     cik, 
     statement,
     category, 

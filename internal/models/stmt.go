@@ -37,6 +37,7 @@ type Statement struct {
 	OpLiabilities           *LineItem
 	NonOpLiabilities        *LineItem
 	ShareholderEquity       *LineItem
+	CFDeltaNWC              *LineItem
 	TaxRate                 *float64
 	BalanceNWC              *float64
 	DeltaNWC                *float64
@@ -53,7 +54,7 @@ func (s *Statement) String() string {
 	res += fmt.Sprintf("|%16s|%16.0f|\n", "CurrAssets", s.TotalCurrentAssets.Value.Float64())
 	res += fmt.Sprintf("|%16s|%16.0f|\n", "OpAssets", s.OpAssets.Value.Float64())
 	res += fmt.Sprintf("|%16s|%16.0f|\n", "NonOpAssets", s.NonOpAssets.Value.Float64())
-	res += fmt.Sprintf("|%16s|%16.0f|\n", "CurrLiabilities", s.TotalCurrentAssets.Value.Float64())
+	res += fmt.Sprintf("|%16s|%16.0f|\n", "CurrLiabilities", s.TotalCurrentLiabilities.Value.Float64())
 	res += fmt.Sprintf("|%16s|%16.0f|\n", "OpLiabilities", s.OpLiabilities.Value.Float64())
 	res += fmt.Sprintf("|%16s|%16.0f|\n", "NonOpLiab.", s.NonOpLiabilities.Value.Float64())
 	res += fmt.Sprintf("|%16s|%16.0f|\n", "NWC", floatNilCheck(s.BalanceNWC))
